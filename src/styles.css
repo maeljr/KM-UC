@@ -1,0 +1,174 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * HACA Partners — Projet 45 Knowledge Assistant
+ * Design language: Microsoft Fluent UI inspired.
+ * Institutional blue, light grays, white. Clean, readable, robust.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans:
+    "Segoe UI", "Segoe UI Web", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,
+    sans-serif;
+  --shadow-fluent-sm: 0 1px 2px rgba(15, 32, 56, 0.06), 0 1px 3px rgba(15, 32, 56, 0.05);
+  --shadow-fluent: 0 2px 4px rgba(15, 32, 56, 0.08), 0 1px 8px rgba(15, 32, 56, 0.06);
+  --shadow-fluent-lg: 0 8px 16px rgba(15, 32, 56, 0.1), 0 2px 6px rgba(15, 32, 56, 0.06);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Surfaces */
+  --background: oklch(0.97 0.004 247);
+  --foreground: oklch(0.22 0.02 255);
+  --surface: oklch(0.985 0.003 247);
+  --surface-foreground: oklch(0.22 0.02 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 255);
+
+  /* Institutional blue (Fluent communication blue, deeper) */
+  --primary: oklch(0.48 0.13 252);
+  --primary-foreground: oklch(0.99 0.003 247);
+  --primary-hover: oklch(0.42 0.13 252);
+
+  --secondary: oklch(0.94 0.006 247);
+  --secondary-foreground: oklch(0.3 0.02 255);
+  --muted: oklch(0.95 0.005 247);
+  --muted-foreground: oklch(0.52 0.02 255);
+  --accent: oklch(0.93 0.025 250);
+  --accent-foreground: oklch(0.4 0.1 252);
+
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.99 0.003 247);
+  --success: oklch(0.58 0.13 155);
+  --success-foreground: oklch(0.99 0.003 247);
+  --warning: oklch(0.78 0.15 80);
+  --warning-foreground: oklch(0.28 0.05 80);
+
+  --border: oklch(0.9 0.006 247);
+  --input: oklch(0.9 0.006 247);
+  --ring: oklch(0.48 0.13 252);
+
+  --chart-1: oklch(0.48 0.13 252);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.58 0.13 155);
+  --chart-4: oklch(0.78 0.15 80);
+  --chart-5: oklch(0.55 0.2 25);
+
+  --sidebar: oklch(0.985 0.003 247);
+  --sidebar-foreground: oklch(0.3 0.02 255);
+  --sidebar-primary: oklch(0.48 0.13 252);
+  --sidebar-primary-foreground: oklch(0.99 0.003 247);
+  --sidebar-accent: oklch(0.93 0.025 250);
+  --sidebar-accent-foreground: oklch(0.4 0.1 252);
+  --sidebar-border: oklch(0.9 0.006 247);
+  --sidebar-ring: oklch(0.48 0.13 252);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 255);
+  --foreground: oklch(0.96 0.003 247);
+  --surface: oklch(0.22 0.02 255);
+  --surface-foreground: oklch(0.96 0.003 247);
+  --card: oklch(0.24 0.02 255);
+  --card-foreground: oklch(0.96 0.003 247);
+  --popover: oklch(0.24 0.02 255);
+  --popover-foreground: oklch(0.96 0.003 247);
+
+  --primary: oklch(0.62 0.14 252);
+  --primary-foreground: oklch(0.16 0.02 255);
+  --primary-hover: oklch(0.68 0.14 252);
+
+  --secondary: oklch(0.28 0.02 255);
+  --secondary-foreground: oklch(0.96 0.003 247);
+  --muted: oklch(0.28 0.02 255);
+  --muted-foreground: oklch(0.7 0.02 255);
+  --accent: oklch(0.32 0.04 252);
+  --accent-foreground: oklch(0.85 0.08 252);
+
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.99 0.003 247);
+  --success: oklch(0.65 0.13 155);
+  --success-foreground: oklch(0.16 0.02 255);
+  --warning: oklch(0.8 0.15 80);
+  --warning-foreground: oklch(0.22 0.05 80);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.62 0.14 252);
+
+  --sidebar: oklch(0.22 0.02 255);
+  --sidebar-foreground: oklch(0.92 0.003 247);
+  --sidebar-primary: oklch(0.62 0.14 252);
+  --sidebar-primary-foreground: oklch(0.16 0.02 255);
+  --sidebar-accent: oklch(0.32 0.04 252);
+  --sidebar-accent-foreground: oklch(0.85 0.08 252);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.62 0.14 252);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
