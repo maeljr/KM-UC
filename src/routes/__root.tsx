@@ -13,6 +13,11 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 
+// ======= NOUVEAU : import du hook useUser =======
+import { useUser } from "@/hooks/useUser";
+
+// ======= COMPOSANTS EXISTANTS (inchangés) =======
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -73,6 +78,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// ======= ROUTE (inchangée sauf RootComponent modifié) =======
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -106,6 +113,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// ======= COMPOSANTS SHELL ET ROOT (RootComponent modifié) =======
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -122,11 +131,66 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // ======= NOUVEAU : utilisation du hook useUser =======
+  const { user, loading, error } = useUser();
 
+  // ======= ÉTAT 1 : chargement =======
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-foreground">Chargement…</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Vérification de votre identité…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ======= ÉTAT 2 : erreur d'authentification =======
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-semibold text-red-500">Erreur</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ======= ÉTAT 3 : non connecté =======
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-semibold text-foreground">Bienvenue sur HACA Insight Hub</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Veuillez vous connecter pour accéder à l'assistant.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Se connecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ======= ÉTAT 4 : connecté =======
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border px-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            Bienvenue, <span className="font-medium text-foreground">{user.userDetails}</span>
+          </p>
+        </header>
+        <Outlet />
+      </div>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

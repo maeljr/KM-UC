@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { botService } from "@/services/botService";
 
 
 export const Route = createFileRoute("/")({
@@ -127,6 +128,9 @@ function KnowledgeAssistant() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deliverableOpen, setDeliverableOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [generatedText, setGeneratedText] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [followUp, setFollowUp] = useState("");
   const [deliverable, setDeliverable] = useState(
     `ICT Governance Requirements — Luxembourg-Supervised Entities
 
@@ -167,6 +171,35 @@ These obligations are cumulative: an audit should verify documentation, governan
     URL.revokeObjectURL(url);
   };
 
+  // ======= CONNEXION AU RAG LOCAL =======
+  const handleSearch = async () => {
+    if (!query.trim() || isSearching) return;
+    setIsSearching(true);
+    try {
+      const response = await botService.sendMessage(query);
+      setGeneratedText(response);
+    } catch (error) {
+      console.error("Erreur recherche:", error);
+      setGeneratedText("Désolé, une erreur est survenue.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleFollowUp = async () => {
+    if (!followUp.trim() || isSearching) return;
+    setIsSearching(true);
+    try {
+      const response = await botService.sendMessage(followUp);
+      setGeneratedText(prev => prev + "\n\n" + response);
+      setFollowUp("");
+    } catch (error) {
+      console.error("Erreur follow-up:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleGenerate = () => {
     setDeliverableOpen(true);
     toast.warning("AI can make mistakes", {
@@ -190,7 +223,6 @@ These obligations are cumulative: an audit should verify documentation, governan
         .join("\n");
       downloadFile(csv, "deliverable.csv", "text/csv;charset=utf-8");
     } else {
-      // PDF: open a print-ready window so the user can save as PDF
       const win = window.open("", "_blank");
       if (win) {
         win.document.write(
@@ -235,11 +267,12 @@ These obligations are cumulative: an audit should verify documentation, governan
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Posez une question réglementaire…"
                 className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
-              <Button size="sm" className="shrink-0 gap-1.5">
-                Search
+              <Button size="sm" className="shrink-0 gap-1.5" onClick={handleSearch} disabled={isSearching}>
+                {isSearching ? "..." : "Search"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -287,51 +320,29 @@ These obligations are cumulative: an audit should verify documentation, governan
             </div>
 
             <div className="space-y-5 px-5 py-6 text-[15px] leading-7 text-foreground sm:px-7">
-              <p>
-                Luxembourg-supervised entities must maintain a robust ICT governance framework
-                aligned with both CSSF and EBA expectations. The key requirements are as follows:
-              </p>
-
-              <ol className="space-y-4">
-                {[
-                  {
-                    title: "Documented governance framework",
-                    body: "Establish a formal ICT and security risk management policy approved by the management body, reviewed at least annually and after material changes.",
-                    cite: "CSSF 20/750",
-                  },
-                  {
-                    title: "Clear lines of responsibility",
-                    body: "Define transparent organisational structures with assigned ownership for ICT risk, including a designated control function independent from operations.",
-                    cite: "CRD VI · Art. 74",
-                  },
-                  {
-                    title: "Outsourcing oversight",
-                    body: "Maintain a register of all outsourcing arrangements, with enhanced due diligence and exit strategies for critical or important functions.",
-                    cite: "EBA/GL/2019/02",
-                  },
-                ].map((item, i) => (
-                  <li key={item.title} className="flex gap-3">
-                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground">{item.title}</p>
-                      <p className="mt-0.5 text-muted-foreground">
-                        {item.body}{" "}
-                        <span className="ml-0.5 inline-flex translate-y-[2px] items-center gap-1 rounded-md border border-primary/30 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          <FileText className="h-3 w-3" />
-                          {item.cite}
-                        </span>
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              <p className="text-muted-foreground">
-                These obligations are cumulative: an audit should verify documentation, governance
-                ownership, and the outsourcing register jointly.
-              </p>
+              {generatedText ? (
+                <p>{generatedText}</p>
+              ) : (
+                <>
+                  <p>Luxembourg-supervised entities must maintain a robust ICT governance framework aligned with both CSSF and EBA expectations. The key requirements are as follows:</p>
+                  <ol className="space-y-4">
+                    {[
+                      { title: "Documented governance framework", body: "Establish a formal ICT and security risk management policy approved by the management body, reviewed at least annually and after material changes.", cite: "CSSF 20/750" },
+                      { title: "Clear lines of responsibility", body: "Define transparent organisational structures with assigned ownership for ICT risk, including a designated control function independent from operations.", cite: "CRD VI · Art. 74" },
+                      { title: "Outsourcing oversight", body: "Maintain a register of all outsourcing arrangements, with enhanced due diligence and exit strategies for critical or important functions.", cite: "EBA/GL/2019/02" }
+                    ].map((item, i) => (
+                      <li key={item.title} className="flex gap-3">
+                        <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">{i + 1}</span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">{item.title}</p>
+                          <p className="mt-0.5 text-muted-foreground">{item.body} <span className="ml-0.5 inline-flex translate-y-[2px] items-center gap-1 rounded-md border border-primary/30 px-2 py-0.5 text-[10px] font-semibold text-primary"><FileText className="h-3 w-3" />{item.cite}</span></p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="text-muted-foreground">These obligations are cumulative: an audit should verify documentation, governance ownership, and the outsourcing register jointly.</p>
+                </>
+              )}
             </div>
           </Card>
 
@@ -355,10 +366,13 @@ These obligations are cumulative: an audit should verify documentation, governan
                 <Paperclip className="h-4 w-4" />
               </button>
               <input
+                value={followUp}
+                onChange={(e) => setFollowUp(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleFollowUp()}
                 placeholder="Ask a follow-up question…"
                 className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary" onClick={handleFollowUp} disabled={isSearching}>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
