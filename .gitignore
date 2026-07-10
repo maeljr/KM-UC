@@ -1,15 +1,7 @@
-# Environnement Python
-.venv/
-
-# Base ChromaDB (trop volumineuse, regénérée automatiquement)
-chroma_db/
-
-# Cache Python
-__pycache__/
-*.pyc
-
-# Fichiers sensibles
-.env
-
-# Modèles téléchargés (seront retéléchargés)
-.cache/
+# RAG local
+rag-local/.venv/
+rag-local/chroma_db/
+rag-local/__pycache__/
+rag-local/*.pyc
+rag-local/.cache/
+rag-local/.env
