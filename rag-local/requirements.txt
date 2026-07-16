@@ -4,3 +4,5 @@ chromadb
 sentence-transformers
 pypdf
 python-multipart
+langchain-text-splitters
+ollama

@@ -1,0 +1,7 @@
+# RAG local
+rag-local/.venv/
+rag-local/chroma_db/
+rag-local/__pycache__/
+rag-local/*.pyc
+rag-local/.cache/
+rag-local/.env

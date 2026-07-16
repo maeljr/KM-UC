@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-07-16_11-29-46",
+  "summaries": {
+    "Baseline (mots)": {
+      "chunker": "Baseline (mots)",
+      "average_keyword_score": 63.3,
+      "precision_at_1": 75.0,
+      "precision_at_5": 50.0,
+      "total_questions": 11,
+      "questions_with_keywords": 8
+    },
+    "Paragraph Chunker": {
+      "chunker": "Paragraph Chunker",
+      "average_keyword_score": 86.2,
+      "precision_at_1": 50.0,
+      "precision_at_5": 62.5,
+      "total_questions": 11,
+      "questions_with_keywords": 8
+    },
+    "Recursive (LangChain)": {
+      "chunker": "Recursive (LangChain)",
+      "average_keyword_score": 36.2,
+      "precision_at_1": 50.0,
+      "precision_at_5": 25.0,
+      "total_questions": 11,
+      "questions_with_keywords": 8
+    },
+    "Token-based (512 tokens)": {
+      "chunker": "Token-based (512 tokens)",
+      "average_keyword_score": 61.7,
+      "precision_at_1": 75.0,
+      "precision_at_5": 37.5,
+      "total_questions": 11,
+      "questions_with_keywords": 8
+    }
+  }
+}

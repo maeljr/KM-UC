@@ -1,0 +1,8 @@
+{
+  "chunker": "Token-based (512 tokens)",
+  "average_keyword_score": 61.7,
+  "precision_at_1": 75.0,
+  "precision_at_5": 37.5,
+  "total_questions": 11,
+  "questions_with_keywords": 8
+}
