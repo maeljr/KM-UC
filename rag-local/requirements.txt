@@ -3,6 +3,7 @@ uvicorn[standard]
 chromadb
 sentence-transformers
 pypdf
+pdfplumber
 python-multipart
 langchain-text-splitters
 ollama
