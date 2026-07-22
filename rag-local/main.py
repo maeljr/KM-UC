@@ -305,23 +305,39 @@ Vérificateur :"""
 
     threading.Thread(target=run_verification, daemon=True).start()
 
-    # Calculer le score de confiance
+        # Calculer le score de confiance (recalibré pour le modèle Azure)
     best_distance = results['distances'][0][0] if results['distances'] else 1.5
-    confidence_score = max(0, 100 - int(best_distance * 50))
-    confidence = "élevée" if confidence_score > 70 else "moyenne" if confidence_score > 40 else "faible"
+    
+    if best_distance < 0.3:
+        confidence_score = 95 - int(best_distance * 50)
+    elif best_distance < 0.6:
+        confidence_score = 80 - int((best_distance - 0.3) * 100)
+    elif best_distance < 1.0:
+        confidence_score = 50 - int((best_distance - 0.6) * 62.5)
+    elif best_distance <= 1.35:
+        confidence_score = 25 - int((best_distance - 1.0) * 42)
+    else:
+        confidence_score = max(10, 25 - int((best_distance - 1.35) * 50))
+    
+    if confidence_score >= 70:
+        confidence = "élevée"
+    elif confidence_score >= 45:
+        confidence = "moyenne"
+    elif confidence_score >= 25:
+        confidence = "faible"
+    else:
+        confidence = "très faible"
 
     # Enrichir les sources avec le texte réel des chunks et les scores de distance
     enriched_sources = []
     for i, meta in enumerate(filtered_metas):
-        # Récupérer la distance de ce chunk spécifique (si disponible)
         chunk_distance = results['distances'][0][i] if results['distances'] and i < len(results['distances'][0]) else best_distance
-        # Convertir la distance en score (plus la distance est faible, plus le score est élevé)
         chunk_score = max(0, min(100, 100 - int(chunk_distance * 50)))
         
         enriched_sources.append({
             "source": meta['source'],
             "chunk_index": meta['chunk_index'],
-            "snippet": meta['text'][:500],  # Tronquer à 500 caractères pour la lisibilité
+            "snippet": meta['text'][:500],
             "section": f"Chunk {meta['chunk_index']}",
             "score": chunk_score
         })
