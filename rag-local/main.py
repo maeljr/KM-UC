@@ -7,14 +7,24 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 import ollama
+import threading
+from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential
+import requests
 
 # --- CONFIGURATION ---
 MODEL_NAME = 'all-MiniLM-L6-v2'
 CHROMA_DB_PATH = "./chroma_db"
 COLLECTION_NAME = "haca_docs"
 OLLAMA_MODEL = "llama3.2:3b"
-# OLLAMA_MODEL = "mistral:7b"
 DOCS_FOLDER = "./docs"
+
+# --- CONFIGURATION AZURE ---
+AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com/openai"
+AZURE_API_VERSION = "2025-01-01-preview"
+AZURE_MODEL_GEN = "gpt-5.6-luna"
+AZURE_MODEL_VERIF = None #"gpt-5.4-mini"
+USE_AZURE = False
 
 # --- INITIALISATION ---
 app = FastAPI(title="HACA Local RAG API")
@@ -144,107 +154,183 @@ def reindex():
 class Question(BaseModel):
     query: str
 
+# --- CONFIGURATION AZURE (déjà dans main.py) ---
+AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com"
+AZURE_API_KEY = "AXIrPFMvIRRAJZqaRQtuUsAaJ7HX4clearD86t6hfn7z1RjaoyRGMXlGgJQQJ99CGAC5T7U2XJ3w3AAAAACOGPr5T"
+AZURE_API_VERSION = "2025-01-01-preview"
+AZURE_MODEL_GEN = "gpt-5.6-luna"
+AZURE_MODEL_VERIF = None #"gpt-5.4-mini"
+USE_AZURE = True
+
+def call_azure_llm(prompt: str, model: str) -> str:
+    """Appelle un modèle LLM sur Azure AI Foundry avec Device Code."""
+    from azure.identity import DeviceCodeCredential
+    import requests
+    
+    credential = DeviceCodeCredential(
+        tenant_id="hacapartners.onmicrosoft.com",  # ou "hacapartners.lu"
+        client_id="04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # Azure CLI client ID
+    )
+    token = credential.get_token("https://cognitiveservices.azure.com/.default").token
+    
+    url = f"https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/{model}/chat/completions?api-version=2025-01-01-preview"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "messages": [{"role": "user", "content": prompt}],
+        "max_completion_tokens": 2000
+    }
+    
+    response = requests.post(url, headers=headers, json=body)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error code: {response.status_code} - {response.text}")
+    
+    return response.json()["choices"][0]["message"]["content"].strip()
+
+'''def call_azure_llm(prompt: str, model: str) -> str:
+    """Appelle un modèle LLM sur Azure AI Foundry avec authentification Entra ID."""
+    credential = DefaultAzureCredential()
+    token = credential.get_token("https://cognitiveservices.azure.com/.default").token
+    
+    url = f"https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/{model}/chat/completions?api-version=2025-01-01-preview"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.0,
+        "max_completion_tokens": 2000
+    }
+    
+    response = requests.post(url, headers=headers, json=body)
+    
+    if response.status_code != 200:
+        raise Exception(f"Error code: {response.status_code} - {response.text}")
+    
+    return response.json()["choices"][0]["message"]["content"].strip()'''
 
 @app.post("/ask")
 def ask(question: Question):
-    """Pose une question au système RAG (sans dictionnaire de routage)."""
+    """Pose une question au système RAG avec double vérification asynchrone."""
     query = question.query
     query_embedding = embedding_model.encode(query).tolist()
 
-    # Recherche dans tous les documents (pas de filtre)
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=10
-    )
+    # --- OPTION A : Filtrage par métadonnées ---
+    query_lower = query.lower()
+    where_filter = None
+
+    if any(kw in query_lower for kw in ["22/822", "gafi", "iran", "myanmar", "rpd", "corée", "blanchiment", "lbc", "ft", "contre-mesures", "liste grise", "haut risque"]):
+        where_filter = {"source": "cssf22_822_annexe_240626.pdf"}
+    elif any(kw in query_lower for kw in ["2650", "31 mars", "mars 2026", "16 mai", "trimestre mars"]):
+        where_filter = {"source": "CSSF_CPDI_2650.pdf"}
+    elif any(kw in query_lower for kw in ["2651", "30 juin", "juin 2026", "17 août", "août", "spécifications", "format", "20,2n", "exclus", "comptes exclus", "date limite"]):
+        where_filter = {"source": "CSSF_CPDI_2651.pdf"}
+    elif any(kw in query_lower for kw in ["26/912", "iml", "91/75", "abrogation"]):
+        where_filter = {"source": "cssf26_912.pdf"}
+
+    if where_filter:
+        results = collection.query(query_embeddings=[query_embedding], n_results=5, where=where_filter)
+    else:
+        results = collection.query(query_embeddings=[query_embedding], n_results=10)
 
     # --- OPTION B : Seuil de distance ---
     if results['distances'] and results['distances'][0]:
         best_distance = results['distances'][0][0]
         if best_distance > 1.35:
-            return {
-                "answer": "Je n'ai trouvé aucun document pertinent pour répondre à cette question.",
-                "confidence": "aucune",
-                "confidence_score": 0,
-                "best_distance": round(best_distance, 3),
-                "sources": []
-            }
-    # --- FIN OPTION B ---
+            return {"answer": "Je n'ai trouvé aucun document pertinent.", "confidence": "aucune", "confidence_score": 0, "sources": []}
 
     if not results['ids'][0]:
-        return {
-            "answer": "Je n'ai trouvé aucun document pertinent pour répondre à cette question.",
-            "confidence": "aucune",
-            "confidence_score": 0,
-            "best_distance": 0,
-            "sources": []
-        }
+        return {"answer": "Je n'ai trouvé aucun document pertinent.", "confidence": "aucune", "confidence_score": 0, "sources": []}
 
-    # Regrouper par source majoritaire
     from collections import Counter
     source_counts = Counter(meta['source'] for meta in results['metadatas'][0])
     majority_source = source_counts.most_common(1)[0][0]
 
-    filtered_metas = []
-    filtered_texts = []
-    for i, meta in enumerate(results['metadatas'][0]):
+    filtered_metas, filtered_texts = [], []
+    for meta in results['metadatas'][0]:
         if meta['source'] == majority_source:
             filtered_metas.append(meta)
             filtered_texts.append(f"[Source : {meta['source']}]\n{meta['text']}")
 
-    filtered_texts = filtered_texts[:5]
-    filtered_metas = filtered_metas[:5]
+    filtered_texts, filtered_metas = filtered_texts[:5], filtered_metas[:5]
     sources_txt = "\n\n---\n\n".join(filtered_texts)
 
-    prompt = f"""Tu es un assistant spécialisé en réglementation financière luxembourgeoise et européenne.
-Réponds à la question en te basant UNIQUEMENT sur les extraits fournis ci-dessous.
-Utilise le contexte général et les synonymes réglementaires évidents.
+    # ========== ÉTAPE 1 : GÉNÉRATION ==========
+    generation_prompt = f"""Tu es un assistant spécialisé en réglementation financière. Réponds UNIQUEMENT à partir des extraits ci-dessous. Cite tes sources.
 
-RÈGLES IMPÉRATIVES :
-1. Ne cite QUE des informations présentes textuellement dans les extraits.
-2. Si une information n'est pas dans les extraits, réponds : "Cette information n'est pas présente dans les documents fournis."
-3. N'invente JAMAIS une définition, une date, un nom d'institution ou un chiffre.
-4. Pour les formats techniques (ex: '20,2N'), ne les interprète que si la légende explicative est présente dans les extraits. Sinon, indique que la définition n'est pas fournie.
-5. Après CHAQUE information, ajoute la source entre crochets, comme ceci : [Source : nom_du_fichier.pdf].
-6. Sois direct et factuel : réponds à la question sans préambule ni excuse.
+RÈGLES :
+1. Ne cite QUE des informations présentes dans les extraits.
+2. Si l'information n'est pas présente, dis-le honnêtement.
+3. Après chaque information, ajoute [Source : nom_du_fichier.pdf].
 
-Extraits (tous issus du même document) :
+Extraits :
 {sources_txt}
 
 Question : {query}
 Réponse :"""
 
     try:
-        response = ollama.generate(
-            model=OLLAMA_MODEL,
-            prompt=prompt,
-            options={"temperature": 0.0}
-        )
-        answer = response['response'].strip()
+        if USE_AZURE:
+            generated_answer = call_azure_llm(generation_prompt, AZURE_MODEL_GEN)
+        else:
+            gen_response = ollama.generate(model=OLLAMA_MODEL, prompt=generation_prompt, options={"temperature": 0.0})
+            generated_answer = gen_response['response'].strip()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'appel à Ollama : {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la génération : {str(e)}")
+
+    # ========== ÉTAPE 2 : VÉRIFICATION (arrière-plan, non bloquante) ==========
+    import threading
+
+    def run_verification():
+        verification_prompt = f"""Tu es un vérificateur. Voici une réponse générée et les extraits sources.
+Pour chaque affirmation, indique si elle est étayée par au moins un extrait.
+Si une affirmation n'est PAS soutenue, commence par "⚠️ AVERTISSEMENT :".
+Si tout est correct, commence par "✅ VÉRIFICATION OK".
+
+Extraits : {sources_txt}
+Réponse : {generated_answer}
+Vérificateur :"""
+        try:
+            if USE_AZURE and AZURE_MODEL_VERIF:
+                verif = call_azure_llm(verification_prompt, AZURE_MODEL_VERIF)
+            else:
+                verif = ollama.generate(model=OLLAMA_MODEL, prompt=verification_prompt, options={"temperature": 0.0})['response'].strip()
+            print(f"[VÉRIFICATION] {verif}")
+        except Exception as e:
+            print(f"[VÉRIFICATION] Erreur : {e}")
+
+    threading.Thread(target=run_verification, daemon=True).start()
 
     # Calculer le score de confiance
-    best_distance = results['distances'][0][0] if results['distances'] and results['distances'][0] else 1.5
+    best_distance = results['distances'][0][0] if results['distances'] else 1.5
+    confidence_score = max(0, 100 - int(best_distance * 50))
+    confidence = "élevée" if confidence_score > 70 else "moyenne" if confidence_score > 40 else "faible"
 
-    if best_distance < 0.5:
-        confidence = "élevée"
-        confidence_score = 85 + int((0.5 - best_distance) / 0.5 * 15)
-    elif best_distance < 0.8:
-        confidence = "moyenne"
-        confidence_score = 50 + int((0.8 - best_distance) / 0.3 * 35)
-    elif best_distance <= 1.35:
-        confidence = "faible"
-        confidence_score = 30 + int((1.35 - best_distance) / 0.55 * 20)
-    else:
-        confidence = "très faible"
-        confidence_score = max(10, 30 - int((best_distance - 1.35) * 50))
+    # Enrichir les sources avec le texte réel des chunks et les scores de distance
+    enriched_sources = []
+    for i, meta in enumerate(filtered_metas):
+        # Récupérer la distance de ce chunk spécifique (si disponible)
+        chunk_distance = results['distances'][0][i] if results['distances'] and i < len(results['distances'][0]) else best_distance
+        # Convertir la distance en score (plus la distance est faible, plus le score est élevé)
+        chunk_score = max(0, min(100, 100 - int(chunk_distance * 50)))
+        
+        enriched_sources.append({
+            "source": meta['source'],
+            "chunk_index": meta['chunk_index'],
+            "snippet": meta['text'][:500],  # Tronquer à 500 caractères pour la lisibilité
+            "section": f"Chunk {meta['chunk_index']}",
+            "score": chunk_score
+        })
 
     return {
-        "answer": answer,
+        "answer": generated_answer,
         "confidence": confidence,
         "confidence_score": confidence_score,
-        "best_distance": round(best_distance, 3),
-        "sources": [{"source": meta['source'], "chunk_index": meta['chunk_index']} for meta in filtered_metas]
+        "sources": enriched_sources
     }
 
 

@@ -7,3 +7,4 @@ pdfplumber
 python-multipart
 langchain-text-splitters
 ollama
+openai
