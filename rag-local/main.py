@@ -11,6 +11,7 @@ import threading
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential
 import requests
+import base64
 
 # --- CONFIGURATION ---
 MODEL_NAME = 'all-MiniLM-L6-v2'
@@ -25,6 +26,12 @@ AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
 AZURE_MODEL_VERIF = "gpt-5-mini"
 USE_AZURE = False
+
+# --- CONFIGURATION AZURE AI SEARCH ---
+AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"
+AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY", "")
+AZURE_SEARCH_INDEX = "haca-docs"
+USE_AZURE_SEARCH = False  # Mettre à True pour utiliser Azure AI Search
 
 # --- INITIALISATION ---
 app = FastAPI(title="HACA Local RAG API")
@@ -133,6 +140,107 @@ def load_and_index_documents():
                 )
     print("Indexation terminée.")
 
+def create_azure_search_index():
+    """Crée l'index Azure AI Search s'il n'existe pas."""
+    import requests
+    
+    url = f"{AZURE_SEARCH_ENDPOINT}/indexes/{AZURE_SEARCH_INDEX}?api-version=2024-07-01"
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": AZURE_SEARCH_KEY
+    }
+    
+    index_schema = {
+        "name": AZURE_SEARCH_INDEX,
+        "fields": [
+            {"name": "id", "type": "Edm.String", "key": True, "filterable": True},
+            {"name": "source", "type": "Edm.String", "filterable": True, "sortable": True},
+            {"name": "chunk_index", "type": "Edm.Int32", "filterable": True, "sortable": True},
+            {"name": "content", "type": "Edm.String", "searchable": True},
+            {"name": "embedding", "type": "Collection(Edm.Single)", "searchable": True, "dimensions": 384, "vectorSearchProfile": "default-profile"}
+        ],
+        "vectorSearch": {
+            "algorithms": [
+                {"name": "default-algorithm", "kind": "hnsw"}
+            ],
+            "profiles": [
+                {"name": "default-profile", "algorithm": "default-algorithm"}
+            ]
+        }
+    }
+    
+    check = requests.get(url, headers=headers)
+    if check.status_code == 200:
+        requests.delete(url, headers=headers)
+    
+    response = requests.put(url, headers=headers, json=index_schema)
+    if response.status_code in [200, 201]:
+        print(f"Index '{AZURE_SEARCH_INDEX}' créé avec succès.")
+    else:
+        print(f"Erreur création index : {response.status_code} - {response.text}")
+
+
+def index_documents_to_azure(documents):
+    """Indexe une liste de documents dans Azure AI Search."""
+    import requests
+    
+    url = f"{AZURE_SEARCH_ENDPOINT}/indexes/{AZURE_SEARCH_INDEX}/docs/index?api-version=2024-07-01"
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": AZURE_SEARCH_KEY
+    }
+    
+    docs = []
+    for doc in documents:
+        safe_id = base64.urlsafe_b64encode(doc["id"].encode()).decode().rstrip("=")
+        docs.append({
+            "id": safe_id,
+            "source": doc["source"],
+            "chunk_index": doc["chunk_index"],
+            "content": doc["content"],
+            "embedding": doc["embedding"],
+            "@search.action": "upload"
+        })
+    
+    body = {"value": docs}
+    response = requests.post(url, headers=headers, json=body)
+    
+    if response.status_code in [200, 201]:
+        print(f"{len(docs)} documents indexés avec succès.")
+    else:
+        print(f"Erreur indexation : {response.status_code} - {response.text}")
+
+
+def search_azure_index(query_embedding, n_results=5):
+    """Recherche dans Azure AI Search par similarité vectorielle."""
+    import requests
+    
+    url = f"{AZURE_SEARCH_ENDPOINT}/indexes/{AZURE_SEARCH_INDEX}/docs/search?api-version=2024-07-01"
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": AZURE_SEARCH_KEY
+    }
+    
+    body = {
+        "vectors": [
+            {
+                "value": query_embedding,
+                "fields": "embedding",
+                "k": n_results
+            }
+        ],
+        "select": "id, source, chunk_index, content",
+        "top": n_results
+    }
+    
+    response = requests.post(url, headers=headers, json=body)
+    
+    if response.status_code == 200:
+        data = response.json()
+        return data["value"]
+    else:
+        print(f"Erreur recherche : {response.status_code} - {response.text}")
+        return []
 
 # --- API ENDPOINTS ---
 
@@ -157,11 +265,16 @@ class Question(BaseModel):
 
 # --- CONFIGURATION AZURE (déjà dans main.py) ---
 AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com"
-AZURE_API_KEY = "AXIrPFMvIRRAJZqaRQtuUsAaJ7HX4clearD86t6hfn7z1RjaoyRGMXlGgJQQJ99CGAC5T7U2XJ3w3AAAAACOGPr5T"
 AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
 AZURE_MODEL_VERIF = None #"gpt-5.4-mini"
 USE_AZURE = True
+
+# --- CONFIGURATION AZURE AI SEARCH ---
+AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"
+AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY", "")
+AZURE_SEARCH_INDEX = "haca-docs"
+USE_AZURE_SEARCH = False
 
 def call_azure_llm(prompt: str, model: str) -> str:
     """Appelle un modèle LLM sur Azure AI Foundry avec Device Code."""
@@ -191,28 +304,41 @@ def call_azure_llm(prompt: str, model: str) -> str:
     
     return response.json()["choices"][0]["message"]["content"].strip()
 
-'''def call_azure_llm(prompt: str, model: str) -> str:
-    """Appelle un modèle LLM sur Azure AI Foundry avec authentification Entra ID."""
-    credential = DefaultAzureCredential()
-    token = credential.get_token("https://cognitiveservices.azure.com/.default").token
-    
-    url = f"https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/{model}/chat/completions?api-version=2025-01-01-preview"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
+# --- MÉTADONNÉES DES DOCUMENTS ---
+DOCUMENTS_META = {
+    "cssf22_822_annexe_240626.pdf": {
+        "title": "Annexe Circulaire CSSF 22/822",
+        "type": "Circulaire",
+        "emetteur": "CSSF",
+        "theme": "LCB-FT / GAFI",
+        "date_publication": "19 juin 2026",
+        "perimetre": "International"
+    },
+    "CSSF_CPDI_2651.pdf": {
+        "title": "Circulaire CSSF-CPDI 26/51",
+        "type": "Circulaire",
+        "emetteur": "CSSF - CPDI",
+        "theme": "Dépôts garantis (FGDL)",
+        "date_publication": "1er juillet 2026",
+        "perimetre": "Luxembourg"
+    },
+    "CSSF_CPDI_2650.pdf": {
+        "title": "Circulaire CSSF-CPDI 26/50",
+        "type": "Circulaire",
+        "emetteur": "CSSF - CPDI",
+        "theme": "Dépôts garantis (FGDL)",
+        "date_publication": "26 mars 2026",
+        "perimetre": "Luxembourg"
+    },
+    "cssf26_912.pdf": {
+        "title": "Circulaire CSSF 26/912",
+        "type": "Circulaire",
+        "emetteur": "CSSF",
+        "theme": "Abrogation IML 91/75",
+        "date_publication": "22 mai 2026",
+        "perimetre": "Luxembourg"
     }
-    body = {
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.0,
-        "max_completion_tokens": 2000
-    }
-    
-    response = requests.post(url, headers=headers, json=body)
-    
-    if response.status_code != 200:
-        raise Exception(f"Error code: {response.status_code} - {response.text}")
-    
-    return response.json()["choices"][0]["message"]["content"].strip()'''
+}
 
 @app.post("/ask")
 def ask(question: Question):
@@ -233,10 +359,18 @@ def ask(question: Question):
     elif any(kw in query_lower for kw in ["26/912", "iml", "91/75", "abrogation"]):
         where_filter = {"source": "cssf26_912.pdf"}
 
-    if where_filter:
-        results = collection.query(query_embeddings=[query_embedding], n_results=5, where=where_filter)
+    if USE_AZURE_SEARCH:
+        azure_results = search_azure_index(query_embedding, n_results=8 if where_filter else 10)
+        results = {
+            "ids": [[r["id"] for r in azure_results]],
+            "distances": [[1.0 - (r.get("@search.score", 0.5) or 0.5) for r in azure_results]],
+            "metadatas": [[{"source": r["source"], "chunk_index": r["chunk_index"], "text": r["content"]} for r in azure_results]]
+        }
     else:
-        results = collection.query(query_embeddings=[query_embedding], n_results=10)
+        if where_filter:
+            results = collection.query(query_embeddings=[query_embedding], n_results=5, where=where_filter)
+        else:
+            results = collection.query(query_embeddings=[query_embedding], n_results=10)
 
     # --- OPTION B : Seuil de distance ---
     if results['distances'] and results['distances'][0]:
@@ -335,12 +469,19 @@ Vérificateur (OUI/NON) :"""
         chunk_distance = results['distances'][0][i] if results['distances'] and i < len(results['distances'][0]) else best_distance
         chunk_score = max(0, min(100, 100 - int(chunk_distance * 50)))
         
+        doc_meta = DOCUMENTS_META.get(meta['source'], {})
         enriched_sources.append({
             "source": meta['source'],
             "chunk_index": meta['chunk_index'],
             "snippet": meta['text'][:500],
             "section": f"Chunk {meta['chunk_index']}",
-            "score": chunk_score
+            "score": chunk_score,
+            "title": doc_meta.get("title", meta['source']),
+            "type_document": doc_meta.get("type", ""),
+            "emetteur": doc_meta.get("emetteur", ""),
+            "theme": doc_meta.get("theme", ""),
+            "date_publication": doc_meta.get("date_publication", ""),
+            "perimetre": doc_meta.get("perimetre", "")
         })
 
     return {
@@ -352,7 +493,26 @@ Vérificateur (OUI/NON) :"""
 
 
 # --- DÉMARRAGE ---
-load_and_index_documents()
+if USE_AZURE_SEARCH:
+    create_azure_search_index()
+    print("Migration des documents vers Azure AI Search...")
+    all_docs = collection.get()
+    if all_docs['ids']:
+        documents = []
+        for i, doc_id in enumerate(all_docs['ids']):
+            documents.append({
+                "id": doc_id,
+                "source": all_docs['metadatas'][i]['source'],
+                "chunk_index": all_docs['metadatas'][i]['chunk_index'],
+                "content": all_docs['metadatas'][i]['text'],
+                "embedding": all_docs['embeddings'][i] if all_docs['embeddings'] else []
+            })
+        for i in range(0, len(documents), 100):
+            batch = documents[i:i+100]
+            index_documents_to_azure(batch)
+        print("Migration terminée.")
+else:
+    load_and_index_documents()
 
 if __name__ == "__main__":
     import uvicorn
