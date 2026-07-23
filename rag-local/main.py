@@ -23,7 +23,7 @@ DOCS_FOLDER = "./docs"
 AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com/openai"
 AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
-AZURE_MODEL_VERIF = None #"gpt-5.4-mini"
+AZURE_MODEL_VERIF = "gpt-5-mini"
 USE_AZURE = False
 
 # --- INITIALISATION ---
@@ -153,6 +153,7 @@ def reindex():
 
 class Question(BaseModel):
     query: str
+    lang: str = "fr"
 
 # --- CONFIGURATION AZURE (déjà dans main.py) ---
 AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com"
@@ -261,11 +262,13 @@ def ask(question: Question):
 
     # ========== ÉTAPE 1 : GÉNÉRATION ==========
     generation_prompt = f"""Tu es un assistant spécialisé en réglementation financière. Réponds UNIQUEMENT à partir des extraits ci-dessous. Cite tes sources.
+Tu dois répondre en {"français" if question.lang == "fr" else "anglais"}.
 
 RÈGLES :
 1. Ne cite QUE des informations présentes dans les extraits.
-2. Si l'information n'est pas présente, dis-le honnêtement.
-3. Après chaque information, ajoute [Source : nom_du_fichier.pdf].
+2. Si l'information n'est pas présente, réponds simplement "Cette information n'est pas présente dans les documents fournis." sans citer de sources ni ajouter de commentaires.
+3. Cite la source au plus UNE fois à la fin de chaque paragraphe ou point de liste. Ne répète pas la même citation au sein d'un même point.
+4. Après chaque information, ajoute [Source : nom_du_fichier.pdf].
 
 Extraits :
 {sources_txt}
@@ -286,14 +289,10 @@ Réponse :"""
     import threading
 
     def run_verification():
-        verification_prompt = f"""Tu es un vérificateur. Voici une réponse générée et les extraits sources.
-Pour chaque affirmation, indique si elle est étayée par au moins un extrait.
-Si une affirmation n'est PAS soutenue, commence par "⚠️ AVERTISSEMENT :".
-Si tout est correct, commence par "✅ VÉRIFICATION OK".
-
-Extraits : {sources_txt}
-Réponse : {generated_answer}
-Vérificateur :"""
+        verification_prompt = f"""Ces extraits soutiennent-ils la réponse ? Réponds uniquement "OUI" ou "NON".
+Extraits (résumé) : {sources_txt[:1000]}
+Réponse : {generated_answer[:500]}
+Vérificateur (OUI/NON) :"""
         try:
             if USE_AZURE and AZURE_MODEL_VERIF:
                 verif = call_azure_llm(verification_prompt, AZURE_MODEL_VERIF)
@@ -301,7 +300,9 @@ Vérificateur :"""
                 verif = ollama.generate(model=OLLAMA_MODEL, prompt=verification_prompt, options={"temperature": 0.0})['response'].strip()
             print(f"[VÉRIFICATION] {verif}")
         except Exception as e:
+            import traceback
             print(f"[VÉRIFICATION] Erreur : {e}")
+            traceback.print_exc()
 
     threading.Thread(target=run_verification, daemon=True).start()
 

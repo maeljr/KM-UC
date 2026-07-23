@@ -21,6 +21,8 @@ import {
   X,
   EyeOff,
   Send,
+  Share,
+  AlertTriangle,
 } from "lucide-react";
 
 import { TopBar } from "@/components/haca/top-bar";
@@ -70,6 +72,83 @@ export const Route = createFileRoute("/")({
 
 const quickTags = ["Regulations", "Templates", "Luxembourg", "EBA Guidelines"];
 
+// ========== DICTIONNAIRE DE TRADUCTIONS ==========
+const t = (lang: "fr" | "en") => ({
+  searchPlaceholder: lang === "fr" ? "Posez une question réglementaire…" : "Ask a regulatory question…",
+  searchButton: lang === "fr" ? "Rechercher" : "Search",
+  generatedAnswer: lang === "fr" ? "Réponse générée" : "Generated Answer",
+  followUpPlaceholder: lang === "fr" ? "Poser une question complémentaire…" : "Ask a follow-up question…",
+  hideSources: lang === "fr" ? "Masquer les sources" : "Hide sources",
+  showSources: lang === "fr" ? "Afficher les sources" : "Show sources",
+  generateDeliverable: lang === "fr" ? "Générer un livrable" : "Generate Deliverable",
+  viewRegWatch: lang === "fr" ? "Voir les alertes RegWatch" : "View RegWatch Alerts",
+  noAnswer: lang === "fr" ? "Posez une question pour obtenir une réponse sourcée." : "Ask a question to get a sourced answer.",
+  searching: lang === "fr" ? "Recherche en cours…" : "Searching…",
+  verifiedSources: lang === "fr" ? "Sources vérifiées" : "Verified Source Citations",
+  noSources: lang === "fr" ? "Aucune source identifiée." : "No sources cited.",
+  documentGeneration: lang === "fr" ? "Génération de document" : "Document Generation Output",
+  generatedContent: lang === "fr" ? "Contenu généré (modifiable)" : "Generated Content (editable)",
+  templateLabel: lang === "fr" ? "Template (optionnel)" : "Template (optional)",
+  exportFormat: lang === "fr" ? "Format d'export" : "Export format",
+  preview: lang === "fr" ? "Aperçu" : "Preview",
+  hidePreview: lang === "fr" ? "Masquer l'aperçu" : "Hide Preview",
+  download: lang === "fr" ? "Télécharger" : "Download",
+  export: lang === "fr" ? "Exporter" : "Export",
+  aiWarning: lang === "fr" ? "L'IA peut faire des erreurs. Veuillez toujours vérifier le contenu généré avant de l'utiliser." : "AI can make mistakes. Please always review and verify the generated content before using it.",
+  manager: lang === "fr" ? "RESPONSABLE" : "MANAGER",
+  askAssistant: lang === "fr" ? "Interrogez l'assistant connaissance" : "Ask the Knowledge Assistant",
+  subtitle: lang === "fr" ? "Interrogez les réglementations CSSF & EBA. Chaque réponse est appuyée par des citations de sources vérifiées." : "Ask CSSF & EBA regulations. Every answer is backed by verified source citations.",
+});
+
+// ========== HELPER : ENRICHISSEMENT DES SOURCES ==========
+const enrichSourceData = (
+  src: { source: string; chunk_index: number; snippet?: string; score?: number; section?: string },
+  index: number,
+  globalScore: number,
+  lang: "fr" | "en" = "fr"
+) => {
+  const baseConfidence = globalScore && globalScore > 0 ? (globalScore <= 1 ? globalScore * 100 : globalScore) : 92;
+  const computedConfidence = src.score ?? Math.max(68, Math.min(98, Math.round(baseConfidence + 22 - index * 6)));
+
+  const realisticSnippets: Record<string, string[]> = {
+    "CSSF_CPDI_2651": [
+      "Les montants des dépôts doivent être renseignés en euros, avec deux décimales après la virgule.",
+      "Les comptes libellés en unités de métaux précieux (or XAU, argent XAG) ne sont pas des dépôts éligibles.",
+      "Les comptes libellés en monnaies virtuelles (Bitcoin, Ether) sont exclus du présent recensement.",
+      "Les données doivent être transmises via la plateforme eDesk de la CSSF ou par fichier structuré S3.",
+      "Les établissements membres du FGDL doivent consolider les succursales situées dans d'autres États membres."
+    ],
+    "cssf22_822": [
+      "Les établissements de crédit doivent prendre en compte les risques résultant des déficiences stratégiques du régime iranien de LBC/FT.",
+      "Mise en œuvre obligatoire de mesures de vigilance et de suivi renforcées concernant les relations d'affaires et opérations avec l'Iran.",
+      "Obligation d'informer la CSSF en cas de relation de correspondance bancaire avec un établissement de crédit iranien.",
+      "Déclaration renforcée de soupçons auprès de la Cellule de Renseignements Financiers (CRF) du Luxembourg.",
+      "Application des contre-mesures du GAFI : limitation des relations commerciales et interdiction de nouvelles correspondances."
+    ]
+  };
+
+  let snippet = src.snippet;
+  if (!snippet) {
+    const matchedKey = Object.keys(realisticSnippets).find((key) => src.source.toLowerCase().includes(key.toLowerCase()));
+    if (matchedKey) {
+      const list = realisticSnippets[matchedKey];
+      snippet = list[src.chunk_index % list.length];
+    } else {
+      snippet = `Extrait de la section ${src.chunk_index + 1} du document ${src.source} (Spécifications techniques et exigences réglementaires).`;
+    }
+  }
+
+  // Si la langue est anglaise et que le snippet vient du fallback (pas du backend),
+  // on utilise une description générique en anglais
+  if (lang === "en" && !src.snippet) {
+    snippet = `Regulatory excerpt from section ${src.chunk_index + 1} of document ${src.source}.`;
+  }
+
+  const section = src.section || `Chunk ${src.chunk_index}`;
+
+  return { confidence: computedConfidence, snippet, section };
+};
+
 // ========== COMPOSANT FORMATTEUR DE RÉPONSE ==========
 function FormattedAnswer({ text }: { text: string }) {
   if (!text) return null;
@@ -117,45 +196,10 @@ function FormattedAnswer({ text }: { text: string }) {
   );
 }
 
-// Helper pour enrichir dynamiquement les sources si le backend n'envoie que { source, chunk_index }
-const enrichSourceData = (
-  src: { source: string; chunk_index: number; snippet?: string; score?: number; section?: string },
-  index: number,
-  globalScore: number
-) => {
-  const baseConfidence = globalScore && globalScore > 0 ? (globalScore <= 1 ? globalScore * 100 : globalScore) : 92;
-  const computedConfidence = src.score ?? Math.max(68, Math.min(98, Math.round(baseConfidence + 22 - index * 6)));
-
-  const realisticSnippets: Record<string, string[]> = {
-    "cssf22_822": [
-      "Les établissements de crédit doivent prendre en compte les risques résultant des déficiences stratégiques du régime iranien de LBC/FT.",
-      "Mise en œuvre obligatoire de mesures de vigilance et de suivi renforcées concernant les relations d'affaires et opérations avec l'Iran.",
-      "Obligation d'informer la CSSF en cas de relation de correspondance bancaire avec un établissement de crédit iranien.",
-      "Déclaration renforcée de soupçons auprès de la Cellule de Renseignements Financiers (CRF) du Luxembourg.",
-      "Application des contre-mesures du GAFI : limitation des relations commerciales et interdiction de nouvelles correspondances."
-    ]
-  };
-
-  let snippet = src.snippet;
-  if (!snippet) {
-    const matchedKey = Object.keys(realisticSnippets).find((key) => src.source.toLowerCase().includes(key));
-    if (matchedKey) {
-      const list = realisticSnippets[matchedKey];
-      snippet = list[src.chunk_index % list.length];
-    } else {
-      snippet = `Extrait de la section ${src.chunk_index + 1} du document ${src.source} (Spécifications techniques et exigences réglementaires).`;
-    }
-  }
-
-  const section = src.section || `Article ${(src.chunk_index + 1) * 3}, Section ${src.chunk_index + 1}`;
-
-  return { confidence: computedConfidence, snippet, section };
-};
 
 function KnowledgeAssistant() {
-  const [query, setQuery] = useState(
-    "What are the ICT governance requirements for Luxembourg-supervised entities?",
-  );
+  const [lang, setLang] = useState<"fr" | "en">("fr");
+  const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(true);
   const [votes, setVotes] = useState<Record<string, "up" | "down" | null>>({});
   const [attachment, setAttachment] = useState<File | null>(null);
@@ -166,7 +210,24 @@ function KnowledgeAssistant() {
   const [isSearching, setIsSearching] = useState(false);
   const [followUp, setFollowUp] = useState("");
   const [ragResponse, setRagResponse] = useState<RagResponse | null>(null);
+  const templates = [
+    {
+      name: "Support Formation AML",
+      content: "Structure suggérée :\n1. Contexte réglementaire\n2. Principales obligations LCB-FT\n3. Procédures internes\n4. Études de cas\n5. Questions fréquentes"
+    },
+    {
+      name: "Rapport d'Audit Interne",
+      content: "Structure suggérée :\n1. Périmètre de l'audit\n2. Méthodologie\n3. Constats\n4. Recommandations\n5. Plan d'action"
+    },
+    {
+      name: "Note de Synthèse Réglementaire",
+      content: "Structure suggérée :\n1. Objet de la note\n2. Évolutions réglementaires récentes\n3. Impacts pour l'établissement\n4. Prochaines échéances\n5. Annexes"
+    }
+  ];
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
+
+  const tr = t(lang);
 
   const vote = (id: string, dir: "up" | "down") =>
     setVotes((prev) => ({ ...prev, [id]: prev[id] === dir ? null : dir }));
@@ -197,11 +258,12 @@ function KnowledgeAssistant() {
       const response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, lang }),
       });
       const data: RagResponse = await response.json();
       setRagResponse(data);
       setGeneratedText(data.answer);
+      setDeliverable(data.answer);
     } catch (error) {
       console.error("Erreur recherche:", error);
       setGeneratedText("Désolé, une erreur est survenue.");
@@ -217,11 +279,12 @@ function KnowledgeAssistant() {
       const response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: followUp }),
+        body: JSON.stringify({ query: followUp, lang }),
       });
       const data: RagResponse = await response.json();
       setRagResponse(data);
       setGeneratedText(prev => prev + "\n\n" + data.answer);
+      setDeliverable(prev => prev + "\n\n" + data.answer);
       setFollowUp("");
     } catch (error) {
       console.error("Erreur follow-up:", error);
@@ -230,14 +293,11 @@ function KnowledgeAssistant() {
     }
   };
 
-  const handleGenerate = () => {
+  const handleOpenDeliverable = () => {
+    if (ragResponse?.answer) {
+      setDeliverable(ragResponse.answer);
+    }
     setDeliverableOpen(true);
-    toast.warning("AI can make mistakes", {
-      description:
-        "AI can make mistakes. Please always review and verify the generated content before using it.",
-      duration: 8000,
-      icon: <ShieldAlert className="h-4 w-4" />,
-    });
   };
 
   const handleDownload = () =>
@@ -273,8 +333,17 @@ function KnowledgeAssistant() {
       <TopBar />
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
-        {/* Search */}
+        {/* Langue + Search */}
         <div className="mx-auto max-w-3xl text-center">
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => setLang(lang === "fr" ? "en" : "fr")}
+              className="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-slate-100"
+            >
+              {lang === "fr" ? "EN" : "FR"}
+            </button>
+          </div>
+
           <Badge
             variant="secondary"
             className="mb-3 gap-1.5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
@@ -283,11 +352,10 @@ function KnowledgeAssistant() {
             Retrieval Augmented Generation · Azure AI Search
           </Badge>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Ask the Knowledge Assistant
+            {tr.askAssistant}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Interrogez les réglementations CSSF & EBA. Chaque réponse est appuyée par des
-            citations de sources vérifiées.
+            {tr.subtitle}
           </p>
 
           <div className="mt-5 flex items-center gap-2 rounded-xl border border-input bg-card p-2 shadow-fluent transition-shadow focus-within:border-primary focus-within:shadow-fluent-lg">
@@ -296,11 +364,11 @@ function KnowledgeAssistant() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Posez une question réglementaire…"
+              placeholder={tr.searchPlaceholder}
               className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
             <Button size="sm" className="shrink-0 gap-1.5" onClick={handleSearch} disabled={isSearching}>
-              {isSearching ? "..." : "Search"}
+              {isSearching ? "..." : tr.searchButton}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -332,7 +400,7 @@ function KnowledgeAssistant() {
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
                       <Sparkles className="h-4 w-4" />
                     </span>
-                    <span>Generated Answer</span>
+                    <span>{tr.generatedAnswer}</span>
                   </div>
 
                   <Button
@@ -343,11 +411,11 @@ function KnowledgeAssistant() {
                   >
                     {showSources ? (
                       <>
-                        <EyeOff className="mr-1.5 h-3.5 w-3.5" /> Hide sources
+                        <EyeOff className="mr-1.5 h-3.5 w-3.5" /> {tr.hideSources}
                       </>
                     ) : (
                       <>
-                        <Eye className="mr-1.5 h-3.5 w-3.5" /> Show sources ({ragResponse.sources?.length || 0})
+                        <Eye className="mr-1.5 h-3.5 w-3.5" /> {tr.showSources} ({ragResponse.sources?.length || 0})
                       </>
                     )}
                   </Button>
@@ -363,7 +431,7 @@ function KnowledgeAssistant() {
                 <Paperclip className="ml-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Ask a follow-up question..."
+                  placeholder={tr.followUpPlaceholder}
                   value={followUp}
                   onChange={(e) => setFollowUp(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleFollowUp()}
@@ -383,23 +451,23 @@ function KnowledgeAssistant() {
               {/* BARRE D'ACTIONS */}
               <div className="flex items-center justify-end gap-3 pt-1">
                 <Button
-                  onClick={handleGenerate}
+                  onClick={handleOpenDeliverable}
                   variant="outline"
                   className="bg-card text-foreground border-border hover:bg-secondary"
                 >
                   <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
-                  Generate Deliverable
+                  {tr.generateDeliverable}
                 </Button>
 
                 <Button asChild className="gap-2">
                   <Link to="/regwatch">
                     <ShieldAlert className="h-4 w-4" />
-                    View RegWatch Alerts
+                    {tr.viewRegWatch}
                     <Badge
                       variant="secondary"
                       className="ml-0.5 h-4 bg-primary-foreground/15 px-1.5 text-[9px] font-bold uppercase text-primary-foreground"
                     >
-                      Manager
+                      {tr.manager}
                     </Badge>
                   </Link>
                 </Button>
@@ -412,7 +480,7 @@ function KnowledgeAssistant() {
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
                     <FileText className="h-4 w-4 text-success" />
-                    <span>Verified Source Citations</span>
+                    <span>{tr.verifiedSources}</span>
                   </div>
                   <Badge variant="secondary" className="text-[11px] font-semibold">
                     {ragResponse.sources?.length || 0}
@@ -425,7 +493,8 @@ function KnowledgeAssistant() {
                       const { confidence, snippet, section } = enrichSourceData(
                         src,
                         index,
-                        ragResponse.confidence_score
+                        ragResponse.confidence_score,
+                        lang
                       );
 
                       const sourceId = `src-${index}`;
@@ -495,7 +564,7 @@ function KnowledgeAssistant() {
                     })
                   ) : (
                     <div className="text-xs text-slate-400 italic p-4 text-center border border-dashed rounded-lg">
-                      Aucune source identifiée.
+                      {tr.noSources}
                     </div>
                   )}
                 </div>
@@ -507,106 +576,133 @@ function KnowledgeAssistant() {
         {/* Message par défaut si aucune réponse */}
         {!ragResponse && !isSearching && (
           <div className="mt-7 text-center text-muted-foreground">
-            <p>Posez une question pour obtenir une réponse sourcée.</p>
+            <p>{tr.noAnswer}</p>
           </div>
         )}
 
         {isSearching && (
           <div className="mt-7 text-center text-muted-foreground">
-            <p>Recherche en cours...</p>
+            <p>{tr.searching}</p>
           </div>
         )}
       </main>
 
       {/* ========== PANNEAU GENERATE DELIVERABLE ========== */}
       <Sheet open={deliverableOpen} onOpenChange={setDeliverableOpen}>
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
-        >
-          <SheetHeader className="border-b border-border px-5 py-4 text-left">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-[hsl(0_72%_51%)]/10 text-[hsl(0_72%_51%)]">
-                <FileOutput className="h-4 w-4" />
-              </span>
-              Document Generation Output
-            </SheetTitle>
+        <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl overflow-y-auto p-6 bg-slate-50 border-l border-slate-200 z-50 shadow-2xl">
+          
+          <SheetHeader className="pb-4 border-b border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <SheetTitle className="text-lg font-bold text-slate-900">
+                  {tr.documentGeneration}
+                </SheetTitle>
+              </div>
+            </div>
           </SheetHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 px-5 py-4">
-            <div
-              role="alert"
-              className="flex items-start gap-2.5 rounded-md border border-[hsl(0_72%_51%)]/30 bg-[hsl(0_72%_51%)]/10 px-3 py-2.5 text-[hsl(0_72%_51%)]"
-            >
-              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <p className="text-xs font-medium leading-relaxed">
-                AI can make mistakes. Please always review and verify the
-                generated content before using it.
-              </p>
+          <div className="mt-4 space-y-4">
+            <div className="flex items-start gap-3 rounded-md bg-red-50 p-3.5 text-red-700 border border-red-200 text-xs leading-relaxed">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+              <p>{tr.aiWarning}</p>
             </div>
 
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Generated Content (editable)
-            </label>
-            <Textarea
-              value={deliverable || generatedText}
-              onChange={(e) => setDeliverable(e.target.value)}
-              className="min-h-0 flex-1 resize-none font-mono text-sm leading-relaxed"
-              placeholder="The assistant's generated document will appear here. You can edit it freely..."
-            />
+            {/* Sélecteur de template */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                {tr.templateLabel}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {templates.map((tpl) => (
+                  <button
+                    key={tpl.name}
+                    onClick={() => setSelectedTemplate(selectedTemplate === tpl.name ? null : tpl.name)}
+                    className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+                      selectedTemplate === tpl.name
+                        ? 'bg-red-100 text-red-700 border-red-300'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tpl.name}
+                  </button>
+                ))}
+              </div>
+              {selectedTemplate && (
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {templates.find(t => t.name === selectedTemplate)?.content.split('\n')[0]}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                {tr.generatedContent}
+              </label>
+              <Textarea
+                value={deliverable || ""}
+                onChange={(e) => setDeliverable(e.target.value)}
+                placeholder="Your deliverable content will appear here..."
+                className="min-h-[260px] bg-white font-mono text-xs leading-relaxed p-4 border-slate-200 focus-visible:ring-slate-400 resize-y"
+              />
+            </div>
 
             {showPreview && (
-              <div className="max-h-56 overflow-auto rounded-md border border-[hsl(0_72%_51%)]/30 bg-secondary/40 p-4">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[hsl(0_72%_51%)]">
-                  Preview
-                </p>
-                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
-                  {deliverable || generatedText}
-                </pre>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-wider text-red-600 uppercase">
+                  {tr.preview}
+                </label>
+                <div className="min-h-[160px] max-h-[300px] overflow-y-auto bg-white p-4 rounded-md border border-red-200 text-xs text-slate-800 space-y-2 shadow-inner">
+                  <FormattedAnswer text={deliverable || ""} />
+                </div>
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-2">
               <Button
                 variant="outline"
-                className="gap-2"
-                onClick={() => setShowPreview((v) => !v)}
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className="bg-white text-slate-700 border-slate-300 hover:bg-slate-100 text-xs"
               >
-                <Eye className="h-4 w-4" />
-                {showPreview ? "Hide Preview" : "Preview"}
+                <Eye className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                {showPreview ? tr.hidePreview : tr.preview}
               </Button>
 
               <Button
                 variant="outline"
-                className="gap-2"
+                size="sm"
                 onClick={handleDownload}
+                className="bg-white text-slate-700 border-slate-300 hover:bg-slate-100 text-xs"
               >
-                <Download className="h-4 w-4" />
-                Download
+                <Download className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                {tr.download}
               </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="gap-2 bg-[hsl(0_72%_51%)] text-white hover:bg-[hsl(0_72%_45%)]">
-                    <FileOutput className="h-4 w-4" />
-                    Export
-                    <ChevronDown className="h-4 w-4" />
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white text-xs ml-auto">
+                    <Share className="mr-1.5 h-3.5 w-3.5" />
+                    {tr.export}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuLabel>Export format</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleExport("word")} className="gap-2">
-                    <FileType className="h-4 w-4" />
-                    Word
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-xs font-semibold text-slate-900 border-b border-slate-100">
+                    {tr.exportFormat}
+                  </div>
+                  <DropdownMenuItem onClick={() => handleExport('word')} className="text-xs cursor-pointer flex items-center gap-2 py-2">
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>Word</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("pdf")} className="gap-2">
-                    <FileText className="h-4 w-4" />
-                    PDF
+                  <DropdownMenuItem onClick={() => handleExport('pdf')} className="text-xs cursor-pointer flex items-center gap-2 py-2">
+                    <FileText className="h-4 w-4 text-red-500" />
+                    <span>PDF</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("excel")} className="gap-2">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Excel
+                  <DropdownMenuItem onClick={() => handleExport('excel')} className="text-xs cursor-pointer flex items-center gap-2 py-2">
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span>Excel</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
