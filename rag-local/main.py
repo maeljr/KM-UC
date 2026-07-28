@@ -1,4 +1,3 @@
-
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,9 +8,21 @@ from pypdf import PdfReader
 import ollama
 import threading
 from openai import AzureOpenAI
-from azure.identity import DefaultAzureCredential
+from azure.identity import DeviceCodeCredential
 import requests
 import base64
+
+# Credential Azure réutilisable (évite le Device Code à chaque appel)
+_azure_credential = None
+
+def _get_azure_credential():
+    global _azure_credential
+    if _azure_credential is None:
+        _azure_credential = DeviceCodeCredential(
+            tenant_id="hacapartners.onmicrosoft.com",
+            client_id="04b07795-8ddb-461a-bbee-02f9e1bf7b46"
+        )
+    return _azure_credential
 
 # --- CONFIGURATION ---
 MODEL_NAME = 'all-MiniLM-L6-v2'
@@ -25,18 +36,18 @@ AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com/openai"
 AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
 AZURE_MODEL_VERIF = "gpt-5-mini"
-USE_AZURE = False
+USE_AZURE = True
+USE_AZURE_EMBEDDING = True  # Mettre à True pour utiliser embed-multilingual-v3
 
 # --- CONFIGURATION AZURE AI SEARCH ---
 AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"
 AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY", "")
 AZURE_SEARCH_INDEX = "haca-docs"
-USE_AZURE_SEARCH = False  # Mettre à True pour utiliser Azure AI Search
+USE_AZURE_SEARCH = False
 
 # --- INITIALISATION ---
 app = FastAPI(title="HACA Local RAG API")
 
-# --- CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -50,6 +61,14 @@ embedding_model = SentenceTransformer(MODEL_NAME)
 
 print("Connexion à ChromaDB...")
 chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
+# Supprimer l'ancienne collection si elle existe (changement de dimension d'embedding)
+try:
+    chroma_client.delete_collection(name=COLLECTION_NAME)
+    print(f"Ancienne collection '{COLLECTION_NAME}' supprimée.")
+except:
+    pass
+
 collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 print("Prêt. L'API est démarrée.")
 
@@ -71,9 +90,7 @@ def extract_text_from_pdf(pdf_path):
 
 
 def chunk_text(text, max_chunk_size=500):
-    """Découpe le texte par paragraphes, puis fusionne si nécessaire.
-       C'est la méthode Paragraph Chunker, validée par les tests du 15/07/2026.
-    """
+    """Découpe le texte par paragraphes, puis fusionne si nécessaire."""
     paragraphs = text.split('\n\n')
     chunks = []
     current_chunk = ""
@@ -82,8 +99,6 @@ def chunk_text(text, max_chunk_size=500):
         para = para.strip()
         if not para:
             continue
-
-        # Si le paragraphe seul est trop long, on le découpe par mots
         if len(para.split()) > max_chunk_size:
             if current_chunk:
                 chunks.append(current_chunk.strip())
@@ -93,8 +108,6 @@ def chunk_text(text, max_chunk_size=500):
                 chunk = " ".join(words[i : i + max_chunk_size])
                 chunks.append(chunk)
             continue
-
-        # Sinon, on essaie de l'ajouter au chunk courant
         if len(current_chunk.split()) + len(para.split()) <= max_chunk_size:
             if current_chunk:
                 current_chunk += "\n\n" + para
@@ -110,35 +123,6 @@ def chunk_text(text, max_chunk_size=500):
 
     return chunks
 
-
-def load_and_index_documents():
-    """Charge tous les PDFs du dossier docs, les découpe et les indexe dans ChromaDB."""
-    if not os.path.exists(DOCS_FOLDER):
-        print(f"Le dossier '{DOCS_FOLDER}' est introuvable. Aucun document indexé.")
-        return
-
-    for filename in os.listdir(DOCS_FOLDER):
-        if filename.endswith(".pdf"):
-            filepath = os.path.join(DOCS_FOLDER, filename)
-            print(f"Traitement de : {filename}")
-
-            text = extract_text_from_pdf(filepath)
-            if not text.strip():
-                print(f"  -> Aucun texte extrait, ignoré.")
-                continue
-
-            chunks = chunk_text(text)
-            print(f"  -> {len(chunks)} chunks créés.")
-
-            for i, chunk in enumerate(chunks):
-                chunk_id = f"{filename}_{i}"
-                embedding = embedding_model.encode(chunk).tolist()
-                collection.upsert(
-                    ids=[chunk_id],
-                    embeddings=[embedding],
-                    metadatas=[{"source": filename, "chunk_index": i, "text": chunk}]
-                )
-    print("Indexation terminée.")
 
 def create_azure_search_index():
     """Crée l'index Azure AI Search s'il n'existe pas."""
@@ -160,12 +144,8 @@ def create_azure_search_index():
             {"name": "embedding", "type": "Collection(Edm.Single)", "searchable": True, "dimensions": 384, "vectorSearchProfile": "default-profile"}
         ],
         "vectorSearch": {
-            "algorithms": [
-                {"name": "default-algorithm", "kind": "hnsw"}
-            ],
-            "profiles": [
-                {"name": "default-profile", "algorithm": "default-algorithm"}
-            ]
+            "algorithms": [{"name": "default-algorithm", "kind": "hnsw"}],
+            "profiles": [{"name": "default-profile", "algorithm": "default-algorithm"}]
         }
     }
     
@@ -222,13 +202,7 @@ def search_azure_index(query_embedding, n_results=5):
     }
     
     body = {
-        "vectors": [
-            {
-                "value": query_embedding,
-                "fields": "embedding",
-                "k": n_results
-            }
-        ],
+        "vectors": [{"value": query_embedding, "fields": "embedding", "k": n_results}],
         "select": "id, source, chunk_index, content",
         "top": n_results
     }
@@ -242,11 +216,82 @@ def search_azure_index(query_embedding, n_results=5):
         print(f"Erreur recherche : {response.status_code} - {response.text}")
         return []
 
+
+def extract_metadata_with_llm(text: str, filename: str) -> dict:
+    """Utilise le LLM pour extraire les métadonnées d'un document réglementaire (Ollama local)."""
+    
+    sample = text[:2000]
+    
+    prompt = f"""Analyse ce texte réglementaire et extrais les métadonnées au format JSON.
+Retourne UNIQUEMENT un objet JSON valide, sans commentaire.
+
+{{
+    "title": "titre complet du document",
+    "type": "Circulaire|Guideline|Règlement|Directive|Newsletter|Rapport|Autre",
+    "emetteur": "CSSF|EBA|ESMA|ECB|Commission Européenne|Autre",
+    "theme": "thème principal en français (ex: LCB-FT, Gouvernance, ESG, ICT Risk, Dépôts garantis...)",
+    "date_publication": "AAAA ou JJ/MM/AAAA si trouvée",
+    "perimetre": "Luxembourg|Europe|International"
+}}
+
+Texte :
+{sample}
+
+JSON :"""
+
+    try:
+        response = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, options={"temperature": 0.0})['response'].strip()
+        response = response.replace("```json", "").replace("```", "").strip()
+        import json
+        metadata = json.loads(response)
+        print(f"  → Métadonnées extraites : {metadata.get('title', filename)}")
+        return metadata
+    except Exception as e:
+        print(f"  → Extraction métadonnées échouée pour {filename} : {e}")
+        return {
+            "title": filename,
+            "type": "Autre",
+            "emetteur": "Inconnu",
+            "theme": "Non classé",
+            "date_publication": "",
+            "perimetre": ""
+        }
+
+
 # --- API ENDPOINTS ---
 
 @app.get("/")
 def root():
     return {"message": "HACA Local RAG API is running. Use POST /ask to ask a question."}
+
+
+class IndexRequest(BaseModel):
+    filename: str
+
+@app.post("/index")
+def index_single(request: IndexRequest):
+    filename = request.filename
+    if not filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier requis")
+    filepath = os.path.join(DOCS_FOLDER, filename)
+    if not os.path.exists(filepath):
+        raise HTTPException(status_code=404, detail=f"Fichier {filename} introuvable")
+    print(f"Indexation de : {filename}")
+    text = extract_text_from_pdf(filepath)
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Aucun texte extrait")
+    if filename not in DOCUMENTS_META:
+        DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
+    chunks = chunk_text(text)
+    print(f"  -> {len(chunks)} chunks créés.")
+    for i, chunk in enumerate(chunks):
+        chunk_id = f"{filename}_{i}"
+        if USE_AZURE_EMBEDDING:
+            embedding = get_azure_embedding(chunk)
+        else:
+            embedding = embedding_model.encode(chunk).tolist()
+        collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
+    return {"status": "ok", "filename": filename, "chunks": len(chunks)}
 
 
 @app.post("/reindex")
@@ -255,7 +300,24 @@ def reindex():
     existing = collection.get()
     if existing['ids']:
         collection.delete(ids=existing['ids'])
-    load_and_index_documents()
+    for filename in os.listdir(DOCS_FOLDER):
+        if filename.endswith(".pdf"):
+            filepath = os.path.join(DOCS_FOLDER, filename)
+            print(f"Traitement de : {filename}")
+            text = extract_text_from_pdf(filepath)
+            if not text.strip():
+                continue
+            if filename not in DOCUMENTS_META:
+                DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
+            chunks = chunk_text(text)
+            for i, chunk in enumerate(chunks):
+                chunk_id = f"{filename}_{i}"
+                if USE_AZURE_EMBEDDING:
+                    embedding = get_azure_embedding(chunk)
+                else:
+                    embedding = embedding_model.encode(chunk).tolist()
+                collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
+    print("Réindexation terminée.")
     return {"status": "Réindexation terminée"}
 
 
@@ -263,116 +325,65 @@ class Question(BaseModel):
     query: str
     lang: str = "fr"
 
-# --- CONFIGURATION AZURE (déjà dans main.py) ---
-AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com"
-AZURE_API_VERSION = "2025-01-01-preview"
-AZURE_MODEL_GEN = "gpt-5.6-luna"
-AZURE_MODEL_VERIF = None #"gpt-5.4-mini"
-USE_AZURE = True
-
-# --- CONFIGURATION AZURE AI SEARCH ---
-AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"
-AZURE_SEARCH_KEY = os.getenv("AZURE_SEARCH_KEY", "")
-AZURE_SEARCH_INDEX = "haca-docs"
-USE_AZURE_SEARCH = False
 
 def call_azure_llm(prompt: str, model: str) -> str:
     """Appelle un modèle LLM sur Azure AI Foundry avec Device Code."""
-    from azure.identity import DeviceCodeCredential
-    import requests
     
-    credential = DeviceCodeCredential(
-        tenant_id="hacapartners.onmicrosoft.com",  # ou "hacapartners.lu"
-        client_id="04b07795-8ddb-461a-bbee-02f9e1bf7b46"  # Azure CLI client ID
-    )
+    credential = _get_azure_credential()
     token = credential.get_token("https://cognitiveservices.azure.com/.default").token
     
     url = f"https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/{model}/chat/completions?api-version=2025-01-01-preview"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    body = {"messages": [{"role": "user", "content": prompt}], "max_completion_tokens": 2000}
+    
+    response = requests.post(url, headers=headers, json=body)
+    if response.status_code != 200:
+        raise Exception(f"Error code: {response.status_code} - {response.text}")
+    return response.json()["choices"][0]["message"]["content"].strip()
+
+def get_azure_embedding(text: str) -> list:
+    """Vectorise un texte avec embed-multilingual-v3 via Azure."""
+    import requests
+    
+    credential = _get_azure_credential()
+    token = credential.get_token("https://cognitiveservices.azure.com/.default").token
+    
+    url = "https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/embed-multilingual-v3/embeddings?api-version=2025-01-01-preview"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
     body = {
-        "messages": [{"role": "user", "content": prompt}],
-        "max_completion_tokens": 2000
+        "input": [text]
     }
     
     response = requests.post(url, headers=headers, json=body)
     
     if response.status_code != 200:
-        raise Exception(f"Error code: {response.status_code} - {response.text}")
+        raise Exception(f"Erreur embedding Azure : {response.status_code} - {response.text}")
     
-    return response.json()["choices"][0]["message"]["content"].strip()
+    return response.json()["data"][0]["embedding"]
 
 # --- MÉTADONNÉES DES DOCUMENTS ---
 DOCUMENTS_META = {
-    "cssf22_822_annexe_240626.pdf": {
-        "title": "Annexe Circulaire CSSF 22/822",
-        "type": "Circulaire",
-        "emetteur": "CSSF",
-        "theme": "LCB-FT / GAFI",
-        "date_publication": "19 juin 2026",
-        "perimetre": "International"
-    },
-    "CSSF_CPDI_2651.pdf": {
-        "title": "Circulaire CSSF-CPDI 26/51",
-        "type": "Circulaire",
-        "emetteur": "CSSF - CPDI",
-        "theme": "Dépôts garantis (FGDL)",
-        "date_publication": "1er juillet 2026",
-        "perimetre": "Luxembourg"
-    },
-    "CSSF_CPDI_2650.pdf": {
-        "title": "Circulaire CSSF-CPDI 26/50",
-        "type": "Circulaire",
-        "emetteur": "CSSF - CPDI",
-        "theme": "Dépôts garantis (FGDL)",
-        "date_publication": "26 mars 2026",
-        "perimetre": "Luxembourg"
-    },
-    "cssf26_912.pdf": {
-        "title": "Circulaire CSSF 26/912",
-        "type": "Circulaire",
-        "emetteur": "CSSF",
-        "theme": "Abrogation IML 91/75",
-        "date_publication": "22 mai 2026",
-        "perimetre": "Luxembourg"
-    }
+    "cssf22_822_annexe_240626.pdf": {"title": "Annexe Circulaire CSSF 22/822", "type": "Circulaire", "emetteur": "CSSF", "theme": "LCB-FT / GAFI", "date_publication": "19 juin 2026", "perimetre": "International"},
+    "CSSF_CPDI_2651.pdf": {"title": "Circulaire CSSF-CPDI 26/51", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "1er juillet 2026", "perimetre": "Luxembourg"},
+    "CSSF_CPDI_2650.pdf": {"title": "Circulaire CSSF-CPDI 26/50", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "26 mars 2026", "perimetre": "Luxembourg"},
+    "cssf26_912.pdf": {"title": "Circulaire CSSF 26/912", "type": "Circulaire", "emetteur": "CSSF", "theme": "Abrogation IML 91/75", "date_publication": "22 mai 2026", "perimetre": "Luxembourg"}
 }
+
 
 @app.post("/ask")
 def ask(question: Question):
     """Pose une question au système RAG avec double vérification asynchrone."""
     query = question.query
-    query_embedding = embedding_model.encode(query).tolist()
-
-    # --- OPTION A : Filtrage par métadonnées ---
-    query_lower = query.lower()
-    where_filter = None
-
-    if any(kw in query_lower for kw in ["22/822", "gafi", "iran", "myanmar", "rpd", "corée", "blanchiment", "lbc", "ft", "contre-mesures", "liste grise", "haut risque"]):
-        where_filter = {"source": "cssf22_822_annexe_240626.pdf"}
-    elif any(kw in query_lower for kw in ["2650", "31 mars", "mars 2026", "16 mai", "trimestre mars"]):
-        where_filter = {"source": "CSSF_CPDI_2650.pdf"}
-    elif any(kw in query_lower for kw in ["2651", "30 juin", "juin 2026", "17 août", "août", "spécifications", "format", "20,2n", "exclus", "comptes exclus", "date limite"]):
-        where_filter = {"source": "CSSF_CPDI_2651.pdf"}
-    elif any(kw in query_lower for kw in ["26/912", "iml", "91/75", "abrogation"]):
-        where_filter = {"source": "cssf26_912.pdf"}
-
-    if USE_AZURE_SEARCH:
-        azure_results = search_azure_index(query_embedding, n_results=8 if where_filter else 10)
-        results = {
-            "ids": [[r["id"] for r in azure_results]],
-            "distances": [[1.0 - (r.get("@search.score", 0.5) or 0.5) for r in azure_results]],
-            "metadatas": [[{"source": r["source"], "chunk_index": r["chunk_index"], "text": r["content"]} for r in azure_results]]
-        }
+    if USE_AZURE_EMBEDDING:
+        query_embedding = get_azure_embedding(query)
     else:
-        if where_filter:
-            results = collection.query(query_embeddings=[query_embedding], n_results=5, where=where_filter)
-        else:
-            results = collection.query(query_embeddings=[query_embedding], n_results=10)
+        query_embedding = embedding_model.encode(query).tolist()
 
-    # --- OPTION B : Seuil de distance ---
+    results = collection.query(query_embeddings=[query_embedding], n_results=20)
+
     if results['distances'] and results['distances'][0]:
         best_distance = results['distances'][0][0]
         if best_distance > 1.35:
@@ -394,14 +405,14 @@ def ask(question: Question):
     filtered_texts, filtered_metas = filtered_texts[:5], filtered_metas[:5]
     sources_txt = "\n\n---\n\n".join(filtered_texts)
 
-    # ========== ÉTAPE 1 : GÉNÉRATION ==========
+    # ========== GÉNÉRATION ==========
     generation_prompt = f"""Tu es un assistant spécialisé en réglementation financière. Réponds UNIQUEMENT à partir des extraits ci-dessous. Cite tes sources.
 Tu dois répondre en {"français" if question.lang == "fr" else "anglais"}.
 
 RÈGLES :
 1. Ne cite QUE des informations présentes dans les extraits.
 2. Si l'information n'est pas présente, réponds simplement "Cette information n'est pas présente dans les documents fournis." sans citer de sources ni ajouter de commentaires.
-3. Cite la source au plus UNE fois à la fin de chaque paragraphe ou point de liste. Ne répète pas la même citation au sein d'un même point.
+3. Cite la source au plus UNE fois à la fin de chaque paragraphe ou point de liste.
 4. Après chaque information, ajoute [Source : nom_du_fichier.pdf].
 
 Extraits :
@@ -419,7 +430,7 @@ Réponse :"""
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération : {str(e)}")
 
-    # ========== ÉTAPE 2 : VÉRIFICATION (arrière-plan, non bloquante) ==========
+    # ========== VÉRIFICATION (arrière-plan) ==========
     import threading
 
     def run_verification():
@@ -434,13 +445,11 @@ Vérificateur (OUI/NON) :"""
                 verif = ollama.generate(model=OLLAMA_MODEL, prompt=verification_prompt, options={"temperature": 0.0})['response'].strip()
             print(f"[VÉRIFICATION] {verif}")
         except Exception as e:
-            import traceback
             print(f"[VÉRIFICATION] Erreur : {e}")
-            traceback.print_exc()
 
     threading.Thread(target=run_verification, daemon=True).start()
 
-        # Calculer le score de confiance (recalibré pour le modèle Azure)
+    # ========== SCORE DE CONFIANCE ==========
     best_distance = results['distances'][0][0] if results['distances'] else 1.5
     
     if best_distance < 0.3:
@@ -463,12 +472,11 @@ Vérificateur (OUI/NON) :"""
     else:
         confidence = "très faible"
 
-    # Enrichir les sources avec le texte réel des chunks et les scores de distance
+    # ========== ENRICHISSEMENT DES SOURCES ==========
     enriched_sources = []
     for i, meta in enumerate(filtered_metas):
         chunk_distance = results['distances'][0][i] if results['distances'] and i < len(results['distances'][0]) else best_distance
         chunk_score = max(0, min(100, 100 - int(chunk_distance * 50)))
-        
         doc_meta = DOCUMENTS_META.get(meta['source'], {})
         enriched_sources.append({
             "source": meta['source'],
@@ -492,27 +500,42 @@ Vérificateur (OUI/NON) :"""
     }
 
 
-# --- DÉMARRAGE ---
-if USE_AZURE_SEARCH:
-    create_azure_search_index()
-    print("Migration des documents vers Azure AI Search...")
-    all_docs = collection.get()
-    if all_docs['ids']:
-        documents = []
-        for i, doc_id in enumerate(all_docs['ids']):
-            documents.append({
-                "id": doc_id,
-                "source": all_docs['metadatas'][i]['source'],
-                "chunk_index": all_docs['metadatas'][i]['chunk_index'],
-                "content": all_docs['metadatas'][i]['text'],
-                "embedding": all_docs['embeddings'][i] if all_docs['embeddings'] else []
-            })
-        for i in range(0, len(documents), 100):
-            batch = documents[i:i+100]
-            index_documents_to_azure(batch)
-        print("Migration terminée.")
+# --- DÉMARRAGE (indexation incrémentale) ---
+existing_docs = set()
+try:
+    all_items = collection.get()
+    if all_items['metadatas']:
+        for meta in all_items['metadatas']:
+            existing_docs.add(meta['source'])
+except:
+    pass
+
+new_docs = []
+for filename in os.listdir(DOCS_FOLDER):
+    if filename.endswith(".pdf") and filename not in existing_docs:
+        new_docs.append(filename)
+
+if new_docs:
+    print(f"Indexation de {len(new_docs)} nouveau(x) document(s)...")
+    for filename in new_docs:
+        filepath = os.path.join(DOCS_FOLDER, filename)
+        print(f"Traitement de : {filename}")
+        text = extract_text_from_pdf(filepath)
+        if not text.strip():
+            continue
+        if filename not in DOCUMENTS_META:
+            DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
+        chunks = chunk_text(text)
+        for i, chunk in enumerate(chunks):
+            chunk_id = f"{filename}_{i}"
+            if USE_AZURE_EMBEDDING:
+                embedding = get_azure_embedding(chunk)
+            else:
+                embedding = embedding_model.encode(chunk).tolist()
+            collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
+    print("Indexation terminée.")
 else:
-    load_and_index_documents()
+    print("Aucun nouveau document à indexer.")
 
 if __name__ == "__main__":
     import uvicorn
