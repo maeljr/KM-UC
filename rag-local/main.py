@@ -11,6 +11,11 @@ from openai import AzureOpenAI
 from azure.identity import DeviceCodeCredential
 import requests
 import base64
+from collections import defaultdict
+import json
+from rank_bm25 import BM25Okapi
+import numpy as np
+import time
 
 # Credential Azure réutilisable (évite le Device Code à chaque appel)
 _azure_credential = None
@@ -31,13 +36,69 @@ COLLECTION_NAME = "haca_docs"
 OLLAMA_MODEL = "llama3.2:3b"
 DOCS_FOLDER = "./docs"
 
+# --- HIÉRARCHIE DES NORMES (force juridique) ---
+FORCE_JURIDIQUE_MAP = {
+    # Niveau 5 - Force maximale
+    ("Règlement", "Commission Européenne"): 5,
+    ("Règlement", "Parlement Européen"): 5,
+    ("RTS", "Commission Européenne"): 5,
+    ("ITS", "Commission Européenne"): 5,
+    ("Directive", "Commission Européenne"): 5,
+    ("Acte délégué", "Commission Européenne"): 5,
+    ("Commission Delegated Regulation (EU)", "Commission Européenne"): 5,
+    
+    # Niveau 4 - Force forte
+    ("Circulaire", "CSSF"): 4,
+    ("Circulaire", "CSSF - CPDI"): 4,
+    
+    # Niveau 3 - Force moyenne
+    ("Guideline", "EBA"): 3,
+    ("Guideline", "ESMA"): 3,
+    ("Guideline", "EIOPA"): 3,
+    
+    # Niveau 2 - Force faible
+    ("Q&A", "ESMA"): 2,
+    ("Q&A", "EBA"): 2,
+    ("Opinion", "ESMA"): 2,
+    ("Supervisory Briefing", "ESMA"): 2,
+    
+    # Niveau 1 - Force minimale
+    ("Consultation Paper", ""): 1,
+    ("Discussion Paper", ""): 1,
+    ("Newsletter", ""): 1,
+    ("Rapport", ""): 1,
+    ("Autre", ""): 1,
+}
+
+EMETTEUR_FORCE_DEFAULT = {
+    "Commission Européenne": 5,
+    "Parlement Européen": 5,
+    "CSSF": 4,
+    "CSSF - CPDI": 4,
+    "EBA": 3,
+    "ESMA": 3,
+    "ECB": 3,
+    "EIOPA": 3,
+}
+
+def get_force_juridique(type_doc: str, emetteur: str) -> int:
+    """Retourne la force juridique (1-5) basée sur le type et l'émetteur.
+    Aucun nom de fichier en dur : 100% scalable."""
+    key = (type_doc, emetteur)
+    if key in FORCE_JURIDIQUE_MAP:
+        return FORCE_JURIDIQUE_MAP[key]
+    if emetteur in EMETTEUR_FORCE_DEFAULT:
+        return EMETTEUR_FORCE_DEFAULT[emetteur]
+    print(f"  ⚠️ Force juridique inconnue pour type={type_doc}, emetteur={emetteur} → 1 par défaut")
+    return 1
+
 # --- CONFIGURATION AZURE ---
 AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com/openai"
 AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
 AZURE_MODEL_VERIF = "gpt-5-mini"
 USE_AZURE = True
-USE_AZURE_EMBEDDING = True  # Mettre à True pour utiliser embed-multilingual-v3
+USE_AZURE_EMBEDDING = True
 
 # --- CONFIGURATION AZURE AI SEARCH ---
 AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"
@@ -62,15 +123,83 @@ embedding_model = SentenceTransformer(MODEL_NAME)
 print("Connexion à ChromaDB...")
 chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-# Supprimer l'ancienne collection si elle existe (changement de dimension d'embedding)
-try:
-    chroma_client.delete_collection(name=COLLECTION_NAME)
-    print(f"Ancienne collection '{COLLECTION_NAME}' supprimée.")
-except:
-    pass
-
 collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-print("Prêt. L'API est démarrée.")
+print(f"Collection '{COLLECTION_NAME}' prête. {collection.count()} documents indexés.")
+
+# --- INITIALISATION BM25 (index plein texte local) ---
+bm25_index = None
+bm25_id_to_source = {}
+bm25_texts = []
+bm25_tokenized = []
+
+def build_bm25_index():
+    """Construit un index BM25 à partir de tous les documents dans ChromaDB."""
+    global bm25_index, bm25_id_to_source, bm25_texts, bm25_tokenized
+    
+    all_items = collection.get()
+    if not all_items['ids']:
+        print("Aucun document dans ChromaDB pour construire l'index BM25.")
+        return
+    
+    bm25_texts = []
+    bm25_id_to_source = {}
+    bm25_tokenized = []
+    
+    for i, (doc_id, meta) in enumerate(zip(all_items['ids'], all_items['metadatas'])):
+        text = meta.get('text', meta.get('content', ''))
+        bm25_texts.append(text)
+        bm25_id_to_source[i] = doc_id
+        bm25_tokenized.append(text.lower().split())
+    
+    bm25_index = BM25Okapi(bm25_tokenized)
+    print(f"Index BM25 construit : {len(bm25_texts)} documents.")
+
+build_bm25_index()
+
+def hybrid_search(query: str, n_results: int = 30, bm25_weight: float = 0.3):
+    """
+    Recherche hybride : combine ChromaDB (vectoriel) + BM25 (plein texte).
+    - bm25_weight : poids du BM25 dans le score final (0.0 = vectoriel pur, 1.0 = BM25 pur).
+    """
+    if USE_AZURE_EMBEDDING:
+        query_embedding = get_azure_embedding(query)
+    else:
+        query_embedding = embedding_model.encode(query).tolist()
+    
+    chroma_results = collection.query(query_embeddings=[query_embedding], n_results=n_results)
+    
+    tokenized_query = query.lower().split()
+    bm25_scores = bm25_index.get_scores(tokenized_query)
+    
+    bm25_max = max(bm25_scores) if max(bm25_scores) > 0 else 1
+    bm25_normalized = bm25_scores / bm25_max
+    
+    combined_scores = []
+    for i, chroma_id in enumerate(chroma_results['ids'][0]):
+        chroma_distance = chroma_results['distances'][0][i]
+        chroma_score = 1.0 - min(chroma_distance / 2.0, 1.0)
+        
+        bm25_score = 0.0
+        for j, doc_id in bm25_id_to_source.items():
+            if doc_id == chroma_id:
+                bm25_score = bm25_normalized[j]
+                break
+        
+        combined = (1.0 - bm25_weight) * chroma_score + bm25_weight * bm25_score
+        combined_scores.append(combined)
+    
+    sorted_indices = np.argsort(combined_scores)[::-1]
+    
+    sorted_ids = [chroma_results['ids'][0][i] for i in sorted_indices]
+    sorted_distances = [chroma_results['distances'][0][i] for i in sorted_indices]
+    sorted_metadatas = [chroma_results['metadatas'][0][i] for i in sorted_indices]
+    
+    return {
+        'ids': [sorted_ids],
+        'distances': [sorted_distances],
+        'metadatas': [sorted_metadatas],
+        'combined_scores': [float(combined_scores[i]) for i in sorted_indices]
+    }
 
 
 # --- FONCTIONS DU PIPELINE ---
@@ -88,11 +217,32 @@ def extract_text_from_pdf(pdf_path):
         print(f"  -> Erreur extraction {pdf_path}: {e}")
     return text
 
-
-def chunk_text(text, max_chunk_size=500):
-    """Découpe le texte par paragraphes, puis fusionne si nécessaire."""
-    paragraphs = text.split('\n\n')
+def chunk_text_fixed(text, chunk_size=400, overlap=75):
+    """Découpe le texte en chunks de taille fixe avec chevauchement (en tokens approximatifs)."""
+    words = text.split()
     chunks = []
+    
+    if len(words) <= chunk_size:
+        return [text]
+    
+    step = chunk_size - overlap
+    for i in range(0, len(words), step):
+        chunk_words = words[i:i + chunk_size]
+        if chunk_words:
+            chunks.append(" ".join(chunk_words))
+        if i + chunk_size >= len(words):
+            break
+    
+    return chunks
+
+def chunk_text_hybride(text, max_chunk_size=500, fixed_size=400, overlap=75, seuil_bascule=3):
+    """
+    Chunking hybride :
+    - Si le paragraph chunking produit ≤ seuil_bascule chunks → fixed-size avec overlap
+    - Sinon → paragraph chunking
+    """
+    paragraphs = text.split('\n\n')
+    para_chunks = []
     current_chunk = ""
 
     for para in paragraphs:
@@ -101,12 +251,12 @@ def chunk_text(text, max_chunk_size=500):
             continue
         if len(para.split()) > max_chunk_size:
             if current_chunk:
-                chunks.append(current_chunk.strip())
+                para_chunks.append(current_chunk.strip())
                 current_chunk = ""
             words = para.split()
             for i in range(0, len(words), max_chunk_size - 50):
                 chunk = " ".join(words[i : i + max_chunk_size])
-                chunks.append(chunk)
+                para_chunks.append(chunk)
             continue
         if len(current_chunk.split()) + len(para.split()) <= max_chunk_size:
             if current_chunk:
@@ -115,13 +265,18 @@ def chunk_text(text, max_chunk_size=500):
                 current_chunk = para
         else:
             if current_chunk:
-                chunks.append(current_chunk.strip())
+                para_chunks.append(current_chunk.strip())
             current_chunk = para
 
     if current_chunk:
-        chunks.append(current_chunk.strip())
+        para_chunks.append(current_chunk.strip())
 
-    return chunks
+    if len(para_chunks) <= seuil_bascule:
+        print(f"  → Document court ({len(para_chunks)} chunks paragraph), bascule en fixed-size ({fixed_size} tokens, {overlap} overlap)")
+        return chunk_text_fixed(text, chunk_size=fixed_size, overlap=overlap)
+    else:
+        print(f"  → Document long ({len(para_chunks)} chunks paragraph), conservation du paragraph chunking")
+        return para_chunks
 
 
 def create_azure_search_index():
@@ -258,6 +413,33 @@ JSON :"""
         }
 
 
+# --- PERSISTANCE DES MÉTADONNÉES ---
+META_FILE = "./documents_meta.json"
+
+def load_meta():
+    """Charge les métadonnées persistées, ou retourne les valeurs par défaut."""
+    if os.path.exists(META_FILE):
+        try:
+            with open(META_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return {
+        "cssf22_822_annexe_240626.pdf": {"title": "Annexe Circulaire CSSF 22/822", "type": "Circulaire", "emetteur": "CSSF", "theme": "LCB-FT / GAFI", "date_publication": "19 juin 2026", "perimetre": "International"},
+        "CSSF_CPDI_2651.pdf": {"title": "Circulaire CSSF-CPDI 26/51", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "1er juillet 2026", "perimetre": "Luxembourg"},
+        "CSSF_CPDI_2650.pdf": {"title": "Circulaire CSSF-CPDI 26/50", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "26 mars 2026", "perimetre": "Luxembourg"},
+        "cssf26_912.pdf": {"title": "Circulaire CSSF 26/912", "type": "Circulaire", "emetteur": "CSSF", "theme": "Abrogation IML 91/75", "date_publication": "22 mai 2026", "perimetre": "Luxembourg"}
+    }
+
+def save_meta():
+    """Sauvegarde les métadonnées dans le fichier JSON."""
+    try:
+        with open(META_FILE, "w", encoding="utf-8") as f:
+            json.dump(DOCUMENTS_META, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"  → Erreur sauvegarde métadonnées : {e}")
+
+
 # --- API ENDPOINTS ---
 
 @app.get("/")
@@ -282,7 +464,8 @@ def index_single(request: IndexRequest):
         raise HTTPException(status_code=400, detail="Aucun texte extrait")
     if filename not in DOCUMENTS_META:
         DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
-    chunks = chunk_text(text)
+        save_meta()
+    chunks = chunk_text_hybride(text)
     print(f"  -> {len(chunks)} chunks créés.")
     for i, chunk in enumerate(chunks):
         chunk_id = f"{filename}_{i}"
@@ -291,6 +474,7 @@ def index_single(request: IndexRequest):
         else:
             embedding = embedding_model.encode(chunk).tolist()
         collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
+    build_bm25_index()
     return {"status": "ok", "filename": filename, "chunks": len(chunks)}
 
 
@@ -309,7 +493,8 @@ def reindex():
                 continue
             if filename not in DOCUMENTS_META:
                 DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
-            chunks = chunk_text(text)
+                save_meta()
+            chunks = chunk_text_hybride(text)
             for i, chunk in enumerate(chunks):
                 chunk_id = f"{filename}_{i}"
                 if USE_AZURE_EMBEDDING:
@@ -318,6 +503,7 @@ def reindex():
                     embedding = embedding_model.encode(chunk).tolist()
                 collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
     print("Réindexation terminée.")
+    build_bm25_index()
     return {"status": "Réindexation terminée"}
 
 
@@ -326,8 +512,8 @@ class Question(BaseModel):
     lang: str = "fr"
 
 
-def call_azure_llm(prompt: str, model: str) -> str:
-    """Appelle un modèle LLM sur Azure AI Foundry avec Device Code."""
+def call_azure_llm(prompt: str, model: str, max_retries: int = 3) -> str:
+    """Appelle un modèle LLM sur Azure AI Foundry avec retry automatique en cas de rate limit."""
     
     credential = _get_azure_credential()
     token = credential.get_token("https://cognitiveservices.azure.com/.default").token
@@ -336,10 +522,21 @@ def call_azure_llm(prompt: str, model: str) -> str:
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     body = {"messages": [{"role": "user", "content": prompt}], "max_completion_tokens": 2000}
     
-    response = requests.post(url, headers=headers, json=body)
-    if response.status_code != 200:
-        raise Exception(f"Error code: {response.status_code} - {response.text}")
-    return response.json()["choices"][0]["message"]["content"].strip()
+    for attempt in range(max_retries):
+        response = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code == 429:
+            wait_time = (attempt + 1) * 5
+            print(f"  ⚠️ Rate limit, nouvelle tentative dans {wait_time}s... (tentative {attempt + 1}/{max_retries})")
+            time.sleep(wait_time)
+            continue
+        
+        if response.status_code != 200:
+            raise Exception(f"Error code: {response.status_code} - {response.text}")
+        
+        return response.json()["choices"][0]["message"]["content"].strip()
+    
+    raise Exception(f"Rate limit persistant après {max_retries} tentatives.")
 
 def get_azure_embedding(text: str) -> list:
     """Vectorise un texte avec embed-multilingual-v3 via Azure."""
@@ -364,59 +561,93 @@ def get_azure_embedding(text: str) -> list:
     
     return response.json()["data"][0]["embedding"]
 
-# --- MÉTADONNÉES DES DOCUMENTS ---
-DOCUMENTS_META = {
-    "cssf22_822_annexe_240626.pdf": {"title": "Annexe Circulaire CSSF 22/822", "type": "Circulaire", "emetteur": "CSSF", "theme": "LCB-FT / GAFI", "date_publication": "19 juin 2026", "perimetre": "International"},
-    "CSSF_CPDI_2651.pdf": {"title": "Circulaire CSSF-CPDI 26/51", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "1er juillet 2026", "perimetre": "Luxembourg"},
-    "CSSF_CPDI_2650.pdf": {"title": "Circulaire CSSF-CPDI 26/50", "type": "Circulaire", "emetteur": "CSSF - CPDI", "theme": "Dépôts garantis (FGDL)", "date_publication": "26 mars 2026", "perimetre": "Luxembourg"},
-    "cssf26_912.pdf": {"title": "Circulaire CSSF 26/912", "type": "Circulaire", "emetteur": "CSSF", "theme": "Abrogation IML 91/75", "date_publication": "22 mai 2026", "perimetre": "Luxembourg"}
-}
+# --- MÉTADONNÉES DES DOCUMENTS (chargées depuis le fichier JSON) ---
+DOCUMENTS_META = load_meta()
+print(f"  → Métadonnées chargées : {len(DOCUMENTS_META)} documents.")
+
+
+def extract_facts_from_chunks(chunks_text: str, query: str, model: str = None) -> str:
+    """Extrait les faits saillants des chunks avec un LLM rapide."""
+    if model is None:
+        model = AZURE_MODEL_VERIF
+    
+    extraction_prompt = f"""Pour chaque extrait ci-dessous, extrais UNIQUEMENT les faits pertinents pour répondre à la question.
+Ignore le texte non pertinent. Pour chaque fait, indique la source.
+
+Format :
+[FAIT] : description du fait | [Source : nom_fichier.pdf]
+
+Question : {query}
+
+Extraits :
+{chunks_text}
+
+Faits extraits :"""
+    
+    try:
+        if USE_AZURE:
+            return call_azure_llm(extraction_prompt, model)
+        else:
+            return ollama.generate(model=OLLAMA_MODEL, prompt=extraction_prompt, options={"temperature": 0.0})['response'].strip()
+    except Exception as e:
+        print(f"  ⚠️ Extraction des faits échouée, utilisation des chunks bruts : {e}")
+        return chunks_text
 
 
 @app.post("/ask")
 def ask(question: Question):
     """Pose une question au système RAG avec double vérification asynchrone."""
     query = question.query
-    if USE_AZURE_EMBEDDING:
-        query_embedding = get_azure_embedding(query)
-    else:
-        query_embedding = embedding_model.encode(query).tolist()
-
-    results = collection.query(query_embeddings=[query_embedding], n_results=20)
+    results = hybrid_search(query, n_results=30, bm25_weight=0.5)
 
     if results['distances'] and results['distances'][0]:
         best_distance = results['distances'][0][0]
-        if best_distance > 1.35:
+        if best_distance > 1.8:
             return {"answer": "Je n'ai trouvé aucun document pertinent.", "confidence": "aucune", "confidence_score": 0, "sources": []}
 
     if not results['ids'][0]:
         return {"answer": "Je n'ai trouvé aucun document pertinent.", "confidence": "aucune", "confidence_score": 0, "sources": []}
 
-    from collections import Counter
-    source_counts = Counter(meta['source'] for meta in results['metadatas'][0])
-    majority_source = source_counts.most_common(1)[0][0]
-
-    filtered_metas, filtered_texts = [], []
-    for meta in results['metadatas'][0]:
-        if meta['source'] == majority_source:
+    filtered_metas = []
+    filtered_texts = []
+    seen_sources = set()
+    
+    for i, meta in enumerate(results['metadatas'][0]):
+        source = meta['source']
+        if source not in seen_sources:
+            seen_sources.add(source)
             filtered_metas.append(meta)
             filtered_texts.append(f"[Source : {meta['source']}]\n{meta['text']}")
+        elif sum(1 for m in filtered_metas if m['source'] == source) < 2:
+            filtered_metas.append(meta)
+            filtered_texts.append(f"[Source : {meta['source']}]\n{meta['text']}")
+        
+        if len(filtered_texts) >= 5:
+            break
 
-    filtered_texts, filtered_metas = filtered_texts[:5], filtered_metas[:5]
     sources_txt = "\n\n---\n\n".join(filtered_texts)
+    
+        # Extraction des faits avant génération (avec fallback)
+    print(f"  → Extraction des faits avec {AZURE_MODEL_VERIF}...")
+    facts = extract_facts_from_chunks(sources_txt, query)
+    
+    # Fallback : si l'extraction est vide, trop courte, ou a échoué → chunks bruts
+    if not facts or len(facts.strip()) < 20 or "extraction des faits échouée" in facts.lower():
+        print("  → Fallback : utilisation des chunks bruts pour la génération.")
+        facts = sources_txt
 
     # ========== GÉNÉRATION ==========
-    generation_prompt = f"""Tu es un assistant spécialisé en réglementation financière. Réponds UNIQUEMENT à partir des extraits ci-dessous. Cite tes sources.
+    generation_prompt = f"""Tu es un assistant spécialisé en réglementation financière. Réponds UNIQUEMENT à partir des faits extraits ci-dessous. Cite tes sources.
 Tu dois répondre en {"français" if question.lang == "fr" else "anglais"}.
 
 RÈGLES :
-1. Ne cite QUE des informations présentes dans les extraits.
-2. Si l'information n'est pas présente, réponds simplement "Cette information n'est pas présente dans les documents fournis." sans citer de sources ni ajouter de commentaires.
+1. Ne cite QUE des faits présents dans la liste ci-dessous.
+2. Si aucun fait pertinent n'est présent, réponds simplement "Cette information n'est pas présente dans les documents fournis." sans citer de sources ni ajouter de commentaires.
 3. Cite la source au plus UNE fois à la fin de chaque paragraphe ou point de liste.
 4. Après chaque information, ajoute [Source : nom_du_fichier.pdf].
 
-Extraits :
-{sources_txt}
+Faits extraits :
+{facts}
 
 Question : {query}
 Réponse :"""
@@ -484,6 +715,10 @@ Vérificateur (OUI/NON) :"""
             "snippet": meta['text'][:500],
             "section": f"Chunk {meta['chunk_index']}",
             "score": chunk_score,
+            "force_juridique": get_force_juridique(
+                doc_meta.get("type", ""),
+                doc_meta.get("emetteur", "")
+            ),
             "title": doc_meta.get("title", meta['source']),
             "type_document": doc_meta.get("type", ""),
             "emetteur": doc_meta.get("emetteur", ""),
@@ -525,7 +760,8 @@ if new_docs:
             continue
         if filename not in DOCUMENTS_META:
             DOCUMENTS_META[filename] = extract_metadata_with_llm(text, filename)
-        chunks = chunk_text(text)
+            save_meta()
+        chunks = chunk_text_hybride(text)
         for i, chunk in enumerate(chunks):
             chunk_id = f"{filename}_{i}"
             if USE_AZURE_EMBEDDING:
@@ -533,6 +769,7 @@ if new_docs:
             else:
                 embedding = embedding_model.encode(chunk).tolist()
             collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])
+    build_bm25_index()
     print("Indexation terminée.")
 else:
     print("Aucun nouveau document à indexer.")
