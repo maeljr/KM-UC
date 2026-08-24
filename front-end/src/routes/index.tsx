@@ -255,7 +255,7 @@ function KnowledgeAssistant() {
     if (!query.trim() || isSearching) return;
     setIsSearching(true);
     try {
-      const response = await fetch("/api/ask", {
+      const response = await fetch("/api/ask-azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, lang }),
@@ -276,7 +276,7 @@ function KnowledgeAssistant() {
     if (!followUp.trim() || isSearching) return;
     setIsSearching(true);
     try {
-      const response = await fetch("/api/ask", {
+      const response = await fetch("/api/ask-azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: followUp, lang }),
@@ -712,4 +712,4 @@ function KnowledgeAssistant() {
       </Sheet>
     </div>
   );
-}
+} 

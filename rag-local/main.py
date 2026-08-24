@@ -6,16 +6,17 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 import ollama
-import threading
 from openai import AzureOpenAI
 from azure.identity import DeviceCodeCredential
 import requests
 import base64
 from collections import defaultdict
 import json
-from rank_bm25 import BM25Okapi
 import numpy as np
 import time
+import threading
+from rank_bm25 import BM25Okapi
+from azure_search import ask_azure, search_azure
 
 # Credential Azure réutilisable (évite le Device Code à chaque appel)
 _azure_credential = None
@@ -49,7 +50,6 @@ FORCE_JURIDIQUE_MAP = {
     
     # Niveau 4 - Force forte
     ("Circulaire", "CSSF"): 4,
-    ("Circulaire", "CSSF - CPDI"): 4,
     
     # Niveau 3 - Force moyenne
     ("Guideline", "EBA"): 3,
@@ -96,7 +96,7 @@ def get_force_juridique(type_doc: str, emetteur: str) -> int:
 AZURE_ENDPOINT = "https://aif-haca-shared-dev.services.ai.azure.com/openai"
 AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
-AZURE_MODEL_VERIF = "gpt-5-mini"
+AZURE_MODEL_VERIF = "gpt-5.4"
 USE_AZURE = True
 USE_AZURE_EMBEDDING = True
 
@@ -539,27 +539,35 @@ def call_azure_llm(prompt: str, model: str, max_retries: int = 3) -> str:
     raise Exception(f"Rate limit persistant après {max_retries} tentatives.")
 
 def get_azure_embedding(text: str) -> list:
-    """Vectorise un texte avec embed-multilingual-v3 via Azure."""
-    import requests
+    """Vectorise un texte avec text-embedding-3-large via Azure."""
+    import os
+    import time
     
     credential = _get_azure_credential()
     token = credential.get_token("https://cognitiveservices.azure.com/.default").token
     
-    url = "https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/embed-multilingual-v3/embeddings?api-version=2025-01-01-preview"
+    url = "https://aif-haca-shared-dev.services.ai.azure.com/openai/deployments/text-embedding-3-large/embeddings?api-version=2024-10-21"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    body = {
-        "input": [text]
-    }
+    body = {"input": [text]}
     
-    response = requests.post(url, headers=headers, json=body)
+    for attempt in range(5):
+        response = requests.post(url, headers=headers, json=body)
+        
+        if response.status_code == 429:
+            wait = 2 * (attempt + 1)
+            print(f"  ⚠️ Rate limit embedding, pause {wait}s...")
+            time.sleep(wait)
+            continue
+        
+        if response.status_code != 200:
+            raise Exception(f"Erreur embedding Azure : {response.status_code} - {response.text}")
+        
+        return response.json()["data"][0]["embedding"]
     
-    if response.status_code != 200:
-        raise Exception(f"Erreur embedding Azure : {response.status_code} - {response.text}")
-    
-    return response.json()["data"][0]["embedding"]
+    raise Exception("Rate limit embedding persistant après 5 tentatives")
 
 # --- MÉTADONNÉES DES DOCUMENTS (chargées depuis le fichier JSON) ---
 DOCUMENTS_META = load_meta()
@@ -593,6 +601,31 @@ Faits extraits :"""
         print(f"  ⚠️ Extraction des faits échouée, utilisation des chunks bruts : {e}")
         return chunks_text
 
+class AzureQuestion(BaseModel):
+    query: str
+    lang: str = "fr"
+    top: int = 8
+    business_line: str = None
+    library: str = None
+
+@app.post("/ask-azure")
+def ask_azure_endpoint(question: AzureQuestion):
+    """Endpoint utilisant Azure AI Search (text-embedding-3-large + GPT-5.4)."""
+    try:
+        filter_expr = None
+        if question.business_line:
+            filter_expr = f"businessLine eq '{question.business_line}'"
+        if question.library:
+            lib_filter = f"library eq '{question.library}'"
+            filter_expr = filter_expr + " and " + lib_filter if filter_expr else lib_filter
+        
+        result = ask_azure(question.query, top=question.top, filter_expr=filter_expr)
+        return result
+    except Exception as e:
+        import traceback
+        print("ERREUR dans /ask-azure :")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur Azure AI Search : {str(e)}")
 
 @app.post("/ask")
 def ask(question: Question):
@@ -627,7 +660,7 @@ def ask(question: Question):
 
     sources_txt = "\n\n---\n\n".join(filtered_texts)
     
-        # Extraction des faits avant génération (avec fallback)
+    # Extraction des faits avant génération (avec fallback)
     print(f"  → Extraction des faits avec {AZURE_MODEL_VERIF}...")
     facts = extract_facts_from_chunks(sources_txt, query)
     
@@ -661,10 +694,13 @@ Réponse :"""
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la génération : {str(e)}")
 
-    # ========== VÉRIFICATION (arrière-plan) ==========
+        # ========== VÉRIFICATION (synchrone avec timeout) ==========
     import threading
 
+    verification_result = None
+
     def run_verification():
+        nonlocal verification_result
         verification_prompt = f"""Ces extraits soutiennent-ils la réponse ? Réponds uniquement "OUI" ou "NON".
 Extraits (résumé) : {sources_txt[:1000]}
 Réponse : {generated_answer[:500]}
@@ -674,25 +710,37 @@ Vérificateur (OUI/NON) :"""
                 verif = call_azure_llm(verification_prompt, AZURE_MODEL_VERIF)
             else:
                 verif = ollama.generate(model=OLLAMA_MODEL, prompt=verification_prompt, options={"temperature": 0.0})['response'].strip()
-            print(f"[VÉRIFICATION] {verif}")
+            verification_result = verif.strip().upper()
+            print(f"[VÉRIFICATION] {verification_result}")
         except Exception as e:
             print(f"[VÉRIFICATION] Erreur : {e}")
+            verification_result = "ERREUR"
 
-    threading.Thread(target=run_verification, daemon=True).start()
+    verif_thread = threading.Thread(target=run_verification, daemon=True)
+    verif_thread.start()
+    verif_thread.join(timeout=5)  # Attendre max 5 secondes
 
-    # ========== SCORE DE CONFIANCE ==========
+        # ========== SCORE DE CONFIANCE HYBRIDE ==========
     best_distance = results['distances'][0][0] if results['distances'] else 1.5
     
-    if best_distance < 0.3:
-        confidence_score = 95 - int(best_distance * 50)
-    elif best_distance < 0.6:
-        confidence_score = 80 - int((best_distance - 0.3) * 100)
-    elif best_distance < 1.0:
-        confidence_score = 50 - int((best_distance - 0.6) * 62.5)
-    elif best_distance <= 1.35:
-        confidence_score = 25 - int((best_distance - 1.0) * 42)
+    # Score vectoriel (0-100)
+    vector_score = max(0, 100 - int(best_distance * 50))
+    
+    # Score BM25 (0-100)
+    bm25_raw = results.get('combined_scores', [0])[0] if results.get('combined_scores') else 0
+    bm25_score = int(bm25_raw * 100)
+    
+    # Score de vérification
+    if verification_result == "OUI":
+        verif_score = 100
+    elif verification_result == "NON":
+        verif_score = 30
     else:
-        confidence_score = max(10, 25 - int((best_distance - 1.35) * 50))
+        verif_score = 50  # timeout ou erreur
+    
+    # Score final pondéré
+    confidence_score = int(0.4 * vector_score + 0.3 * bm25_score + 0.3 * verif_score)
+    confidence_score = max(0, min(100, confidence_score))
     
     if confidence_score >= 70:
         confidence = "élevée"
@@ -702,6 +750,8 @@ Vérificateur (OUI/NON) :"""
         confidence = "faible"
     else:
         confidence = "très faible"
+    
+    print(f"  → Scores: vectoriel={vector_score}, BM25={bm25_score}, vérif={verif_score} → final={confidence_score} ({confidence})")
 
     # ========== ENRICHISSEMENT DES SOURCES ==========
     enriched_sources = []
@@ -766,6 +816,7 @@ if new_docs:
             chunk_id = f"{filename}_{i}"
             if USE_AZURE_EMBEDDING:
                 embedding = get_azure_embedding(chunk)
+                time.sleep(1)  # pause pour éviter le rate limit
             else:
                 embedding = embedding_model.encode(chunk).tolist()
             collection.upsert(ids=[chunk_id], embeddings=[embedding], metadatas=[{"source": filename, "chunk_index": i, "text": chunk}])

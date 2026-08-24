@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -56,46 +56,9 @@ type Alert = {
   title: string;
   summary: string;
   date: string;
+  link: string;
+  source: string;
 };
-
-const alerts: Alert[] = [
-  {
-    id: "a1",
-    category: "CRD VI",
-    severity: "action",
-    title: "New ICT third-party risk thresholds enter into force",
-    summary:
-      "CRD VI introduces stricter quantitative thresholds for critical ICT providers. Existing outsourcing registers must be reassessed before the Q3 reporting cycle.",
-    date: "Today · 07:42",
-  },
-  {
-    id: "a2",
-    category: "EBA Guidelines",
-    severity: "alert",
-    title: "EBA consults on revised remuneration disclosure templates",
-    summary:
-      "Draft guidelines propose changes to Pillar 3 remuneration templates. Impact on client reporting deliverables is expected but not yet binding.",
-    date: "Today · 06:15",
-  },
-  {
-    id: "a3",
-    category: "Obsolescence Check",
-    severity: "action",
-    title: "Internal template references superseded CSSF circular",
-    summary:
-      "Deliverable template 'AUD-LU-12' cites CSSF 12/552, repealed by 20/750. Update required to avoid referencing an obsolete source.",
-    date: "Yesterday · 18:30",
-  },
-  {
-    id: "a4",
-    category: "CSSF Circulars",
-    severity: "alert",
-    title: "CSSF clarifies expectations on cloud exit strategies",
-    summary:
-      "A new FAQ details supervisory expectations for documented and tested exit plans for material cloud arrangements.",
-    date: "Yesterday · 14:02",
-  },
-];
 
 const severityStyles: Record<
   Severity,
@@ -127,6 +90,28 @@ const pipeline = [
 function RegWatchAgent() {
   const [actionOnly, setActionOnly] = useState(false);
   const [acknowledged, setAcknowledged] = useState<Record<string, boolean>>({});
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetch("/data/regwatch.json")
+      .then((res) => res.json())
+      .then((data: any[]) => {
+        const mapped: Alert[] = data.map((item, index) => ({
+          id: `reg-${index}`,
+          category: item.source || "RegWatch",
+          severity: "info",
+          title: item.title?.split("\n")[0] || "Alerte",
+          summary: item.title?.slice(0, 300) || "",
+          date: item.date || "",
+          link: item.link || "#",
+          source: item.source || "",
+        }));
+        setAlerts(mapped);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const visible = actionOnly ? alerts.filter((a) => a.severity === "action") : alerts;
 
@@ -217,6 +202,12 @@ function RegWatchAgent() {
             </Badge>
           </div>
 
+          {loading && (
+            <div className="mt-5 rounded-lg border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
+              Chargement des alertes RegWatch…
+            </div>
+          )}
+
           <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
             {visible.map((alert) => {
               const sev = severityStyles[alert.severity];
@@ -248,11 +239,13 @@ function RegWatchAgent() {
                   </p>
 
                   <a
-                    href="#"
+                    href={alert.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="mt-3 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary-hover hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
-                    See More
+                    Voir la source
                   </a>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
