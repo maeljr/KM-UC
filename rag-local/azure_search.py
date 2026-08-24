@@ -10,6 +10,7 @@ S'inspire de rag_retrieve.py avec ajout de :
 import os
 import re
 import requests
+import time
 from azure.identity import DeviceCodeCredential
 
 _credential = None
@@ -49,7 +50,8 @@ Règles impératives :
 3. Si les extraits ne permettent pas de répondre, dis-le explicitement sans tenter de deviner.
 4. Ne cite jamais un numéro d'article, de règlement ou de directive qui n'apparaît pas littéralement dans les extraits.
 5. Réponds dans la langue de la question, même si les extraits sont dans une autre langue.
-6. Structure ta réponse de façon concise, en puces si plusieurs points."""
+6. Structure ta réponse de façon concise, en puces si plusieurs points.
+7. Si la question demande une information en temps réel (cours de bourse, actualité, date du jour), réponds que tu ne peux pas fournir ce type d'information car ta base documentaire est statique."""
 
 
 def _get_embedding(question: str) -> list:
@@ -124,7 +126,7 @@ def _build_context(passages: list):
     return "\n\n---\n\n".join(morceaux), retenus
 
 
-def generate_answer(question: str, passages: list):
+def generate_answer(question: str, passages: list, history: list = None):
     """Génère une réponse à partir des passages Azure AI Search."""
     if not passages:
         return {
@@ -134,28 +136,62 @@ def generate_answer(question: str, passages: list):
             "confidence_score": 0,
             "grounded": False,
         }
+
+    # Seuil de pertinence : si le meilleur reranker est trop bas, on refuse de répondre
+    best_reranker = max((p.get("reranker") or 0) for p in passages)
+    if best_reranker < 2.0:
+        return {
+            "answer": "Je n'ai pas trouvé d'élément suffisamment pertinent dans la base documentaire pour répondre à cette question.",
+            "sources": [],
+            "confidence": "aucune",
+            "confidence_score": 0,
+            "grounded": False,
+        }
     
     contexte, retenus = _build_context(passages)
+    
+    # Construire l'historique conversationnel
+    history_text = ""
+    if history:
+        for msg in history:
+            role = "Utilisateur" if msg.get("role") == "user" else "Assistant"
+            history_text += f"{role} : {msg.get('content', '')}\n"
+    
     url = f"{AZURE_AI_ENDPOINT}/openai/deployments/{CHAT_DEPLOYMENT}/chat/completions?api-version={API_VERSION}"
     corps = {
         "temperature": 0.0,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Extraits de la base documentaire :\n\n{contexte}\n\nQuestion : {question}"},
+            {"role": "user", "content": f"Historique de la conversation :\n{history_text}\n\nExtraits de la base documentaire :\n\n{contexte}\n\nQuestion : {question}"},
         ],
     }
     
     credential = _get_credential()
     token = credential.get_token("https://cognitiveservices.azure.com/.default").token
     
-    r = requests.post(url, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=corps, timeout=180)
-    if r.status_code != 200:
-        corps.pop("temperature", None)
+    max_retries = 3
+    for attempt in range(max_retries):
         credential = _get_credential()
         token = credential.get_token("https://cognitiveservices.azure.com/.default").token
         r = requests.post(url, headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, json=corps, timeout=180)
-        if r.status_code != 200:
-            raise RuntimeError(f"Génération HTTP {r.status_code}: {r.text[:300]}")
+        
+        if r.status_code == 429:
+            wait_time = (attempt + 1) * 5
+            print(f"  ⚠️ Rate limit GPT-5.4, nouvelle tentative dans {wait_time}s...")
+            time.sleep(wait_time)
+            continue
+        
+        if r.status_code == 200:
+            break
+        
+        if r.status_code == 400 and "temperature" in corps:
+            corps.pop("temperature", None)
+            continue
+        
+        raise RuntimeError(f"Génération HTTP {r.status_code}: {r.text[:300]}")
+    
+    if r.status_code != 200:
+        raise RuntimeError(f"Génération HTTP {r.status_code} après {max_retries} tentatives")
     
     texte = r.json()["choices"][0]["message"]["content"].strip()
     
@@ -203,7 +239,6 @@ def generate_answer(question: str, passages: list):
         "cited": cites,
     }
 
-def ask_azure(question: str, top: int = TOP_K, filter_expr: str = None) -> dict:
-    """Fonction principale : recherche + génération."""
+def ask_azure(question: str, top: int = TOP_K, filter_expr: str = None, history: list = None) -> dict:
     passages = search_azure(question, top=top, filter_expr=filter_expr)
-    return generate_answer(question, passages)
+    return generate_answer(question, passages, history=history)

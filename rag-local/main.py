@@ -607,6 +607,7 @@ class AzureQuestion(BaseModel):
     top: int = 8
     business_line: str = None
     library: str = None
+    history: list = []
 
 @app.post("/ask-azure")
 def ask_azure_endpoint(question: AzureQuestion):
@@ -619,7 +620,7 @@ def ask_azure_endpoint(question: AzureQuestion):
             lib_filter = f"library eq '{question.library}'"
             filter_expr = filter_expr + " and " + lib_filter if filter_expr else lib_filter
         
-        result = ask_azure(question.query, top=question.top, filter_expr=filter_expr)
+        result = ask_azure(question.query, top=question.top, filter_expr=filter_expr, history=question.history)
         return result
     except Exception as e:
         import traceback

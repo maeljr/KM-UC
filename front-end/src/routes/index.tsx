@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -138,8 +138,6 @@ const enrichSourceData = (
     }
   }
 
-  // Si la langue est anglaise et que le snippet vient du fallback (pas du backend),
-  // on utilise une description générique en anglais
   if (lang === "en" && !src.snippet) {
     snippet = `Regulatory excerpt from section ${src.chunk_index + 1} of document ${src.source}.`;
   }
@@ -209,7 +207,52 @@ function KnowledgeAssistant() {
   const [generatedText, setGeneratedText] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [followUp, setFollowUp] = useState("");
+
+  type ChatMessage = {
+    role: "user" | "assistant";
+    content: string;
+    sources?: SourceItem[];
+  };
+
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [ragResponse, setRagResponse] = useState<RagResponse | null>(null);
+
+  const clearConversation = () => {
+    setChatHistory([]);
+    setRagResponse(null);
+    setGeneratedText("");
+    setDeliverable("");
+    setQuery("");
+    setFollowUp("");
+    localStorage.removeItem("haca-last-response");
+    localStorage.removeItem("haca-last-query");
+    localStorage.removeItem("haca-chat-history");
+  };
+
+  // Restaurer la dernière réponse au chargement
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("haca-last-response");
+      const savedQuery = localStorage.getItem("haca-last-query");
+      const savedHistory = localStorage.getItem("haca-chat-history");
+      if (savedHistory) {
+        setChatHistory(JSON.parse(savedHistory));
+      } else if (saved) {
+        const data: RagResponse = JSON.parse(saved);
+        setRagResponse(data);
+        setGeneratedText(data.answer);
+        setDeliverable(data.answer);
+        setChatHistory([
+          { role: "user", content: savedQuery || "" },
+          { role: "assistant", content: data.answer, sources: data.sources },
+        ]);
+      }
+      if (savedQuery) setQuery(savedQuery);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const templates = [
     {
       name: "Support Formation AML",
@@ -261,9 +304,17 @@ function KnowledgeAssistant() {
         body: JSON.stringify({ query, lang }),
       });
       const data: RagResponse = await response.json();
+      setChatHistory(prev => {
+        const updated = [...prev, { role: "user", content: query }, { role: "assistant", content: data.answer, sources: data.sources }];
+        localStorage.setItem("haca-chat-history", JSON.stringify(updated));
+        return updated;
+      });
       setRagResponse(data);
       setGeneratedText(data.answer);
       setDeliverable(data.answer);
+      setFollowUp("");
+      localStorage.setItem("haca-last-response", JSON.stringify(data));
+      localStorage.setItem("haca-last-query", query);
     } catch (error) {
       console.error("Erreur recherche:", error);
       setGeneratedText("Désolé, une erreur est survenue.");
@@ -276,15 +327,25 @@ function KnowledgeAssistant() {
     if (!followUp.trim() || isSearching) return;
     setIsSearching(true);
     try {
+      const history = [
+        { role: "user", content: query },
+        { role: "assistant", content: generatedText || ragResponse?.answer || "" },
+      ];
+
       const response = await fetch("/api/ask-azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: followUp, lang }),
+        body: JSON.stringify({ query: followUp, lang, history }),
       });
       const data: RagResponse = await response.json();
+      setChatHistory(prev => {
+        const updated = [...prev, { role: "user", content: followUp }, { role: "assistant", content: data.answer, sources: data.sources }];
+        localStorage.setItem("haca-chat-history", JSON.stringify(updated));
+        return updated;
+      });
       setRagResponse(data);
-      setGeneratedText(prev => prev + "\n\n" + data.answer);
-      setDeliverable(prev => prev + "\n\n" + data.answer);
+      setGeneratedText(data.answer);
+      setDeliverable(data.answer);
       setFollowUp("");
     } catch (error) {
       console.error("Erreur follow-up:", error);
@@ -358,7 +419,20 @@ function KnowledgeAssistant() {
             {tr.subtitle}
           </p>
 
-          <div className="mt-5 flex items-center gap-2 rounded-xl border border-input bg-card p-2 shadow-fluent transition-shadow focus-within:border-primary focus-within:shadow-fluent-lg">
+          <div className="flex justify-between items-center mt-4">
+            <span className="text-xs text-muted-foreground">Conversation en cours</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearConversation}
+              className="text-xs gap-1.5"
+            >
+              <X className="h-3.5 w-3.5" />
+              Nouvelle conversation
+            </Button>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2 rounded-xl border border-input bg-card p-2 shadow-fluent transition-shadow focus-within:border-primary focus-within:shadow-fluent-lg">
             <Search className="ml-2 h-5 w-5 shrink-0 text-muted-foreground" />
             <input
               value={query}
@@ -387,7 +461,7 @@ function KnowledgeAssistant() {
         </div>
 
         {/* ========== RÉPONSE RAG + SOURCES ========== */}
-        {ragResponse && (
+        {chatHistory.length > 0 && (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* COLONNE GAUCHE : Réponse + Follow-up + Actions */}
@@ -415,14 +489,32 @@ function KnowledgeAssistant() {
                       </>
                     ) : (
                       <>
-                        <Eye className="mr-1.5 h-3.5 w-3.5" /> {tr.showSources} ({ragResponse.sources?.length || 0})
+                        <Eye className="mr-1.5 h-3.5 w-3.5" /> {tr.showSources} ({ragResponse?.sources?.length || 0})
                       </>
                     )}
                   </Button>
                 </div>
 
-                <div className="p-6">
-                  <FormattedAnswer text={ragResponse.answer} />
+                <div className="p-6 space-y-5">
+                  {chatHistory.map((msg, idx) => (
+                    <div key={idx} className={cn(
+                      "flex",
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    )}>
+                      <div className={cn(
+                        "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-foreground"
+                      )}>
+                        {msg.role === "user" ? (
+                          <p className="font-medium">{msg.content}</p>
+                        ) : (
+                          <FormattedAnswer text={msg.content} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </Card>
 
@@ -483,17 +575,17 @@ function KnowledgeAssistant() {
                     <span>{tr.verifiedSources}</span>
                   </div>
                   <Badge variant="secondary" className="text-[11px] font-semibold">
-                    {ragResponse.sources?.length || 0}
+                    {ragResponse?.sources?.length || 0}
                   </Badge>
                 </div>
 
                 <div className="space-y-3">
-                  {ragResponse.sources && ragResponse.sources.length > 0 ? (
+                  {ragResponse?.sources && ragResponse.sources.length > 0 ? (
                     ragResponse.sources.map((src: SourceItem, index: number) => {
                       const { confidence, snippet, section } = enrichSourceData(
                         src,
                         index,
-                        ragResponse.confidence_score,
+                        ragResponse?.confidence_score || 0,
                         lang
                       );
 
@@ -712,4 +804,4 @@ function KnowledgeAssistant() {
       </Sheet>
     </div>
   );
-} 
+}
