@@ -41,14 +41,6 @@ export const Route = createFileRoute("/regwatch")({
 
 type Severity = "action" | "alert" | "info";
 
-const categories: { id: string; label: string; severity: Severity; count: number }[] = [
-  { id: "crd6", label: "CRD VI", severity: "action", count: 3 },
-  { id: "eba", label: "EBA Guidelines", severity: "alert", count: 5 },
-  { id: "obs", label: "Obsolescence Check", severity: "action", count: 2 },
-  { id: "cssf", label: "CSSF Circulars", severity: "alert", count: 4 },
-  { id: "aml", label: "AML / CFT", severity: "info", count: 1 },
-];
-
 type Alert = {
   id: string;
   category: string;
@@ -112,6 +104,24 @@ function RegWatchAgent() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  // Catégories dynamiques basées sur les alertes chargées
+  const categories = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    alerts.forEach((alert) => {
+      const key = alert.source || alert.category || "Autre";
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts).map(([label, count]) => ({
+      id: label.toLowerCase().replace(/\s+/g, "-"),
+      label,
+      severity: "info" as Severity,
+      count,
+    }));
+  }, [alerts]);
+
+  const actionRequired = alerts.filter((a) => a.severity === "action").length;
+  const totalAlerts = alerts.length;
 
   const visible = actionOnly ? alerts.filter((a) => a.severity === "action") : alerts;
 
@@ -178,8 +188,8 @@ function RegWatchAgent() {
                 Priority Summary
               </div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-                <span className="font-semibold text-destructive">5 items</span> require action ·{" "}
-                <span className="font-semibold text-warning-foreground">9 alerts</span> under review.
+                <span className="font-semibold text-destructive">{actionRequired} items</span> require action ·{" "}
+                <span className="font-semibold text-warning-foreground">{totalAlerts} alerts</span> under review.
               </p>
             </div>
           </Card>
