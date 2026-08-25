@@ -36,7 +36,7 @@ CHAT_DEPLOYMENT = os.getenv("CHAT_DEPLOYMENT", "gpt-5.4")
 API_VERSION = "2024-10-21"
 SEARCH_API_VERSION = "2024-07-01"
 
-TOP_K = 8
+TOP_K = 15
 VECTOR_K = 50
 MAX_CONTEXT_CHARS = 24000
 
@@ -50,8 +50,9 @@ Règles impératives :
 3. Si les extraits ne permettent pas de répondre, dis-le explicitement sans tenter de deviner.
 4. Ne cite jamais un numéro d'article, de règlement ou de directive qui n'apparaît pas littéralement dans les extraits.
 5. Réponds dans la langue de la question, même si les extraits sont dans une autre langue.
-6. Structure ta réponse de façon concise, en puces si plusieurs points.
-7. Si la question demande une information en temps réel (cours de bourse, actualité, date du jour), réponds que tu ne peux pas fournir ce type d'information car ta base documentaire est statique."""
+6. Structure ta réponse de façon complète. Utilise des puces si plusieurs points. Va jusqu'au bout de chaque point sans tronquer.
+7. Si la question demande une information en temps réel (cours de bourse, actualité, date du jour), réponds que tu ne peux pas fournir ce type d'information car ta base documentaire est statique.
+8. Si la question mentionne explicitement un document précis, n'utilise que les extraits de CE document. Si les extraits fournis ne proviennent pas du document mentionné, réponds que l'information est introuvable dans le document cible au lieu d'utiliser des documents tiers."""
 
 
 def _get_embedding(question: str) -> list:
@@ -68,10 +69,49 @@ def _get_embedding(question: str) -> list:
         raise RuntimeError(f"Embedding HTTP {r.status_code}: {r.text[:300]}")
     return r.json()["data"][0]["embedding"]
 
+# Détection de document dans la question pour filtrage ciblé
+def detect_document_filter(question: str) -> str:
+    """Détecte si la question mentionne un document spécifique et retourne un filtre."""
+    # Mapping de mots-clés vers des noms de documents
+    doc_keywords = {
+        "risk in private equity": "Risk in Private Equity - Oct 2015.pdf",
+        "private equity": None,  # trop générique, pas de filtre
+        "signed report amethis": "Signed_report_Amethis Investment Fund Manager S.A._31.12.17.pdf",
+        "amethis investment": "Signed_report_Amethis Investment Fund Manager S.A._31.12.17.pdf",
+        "amethis": "Signed_report_Amethis Investment Fund Manager S.A._31.12.17.pdf",
+        "assessments creation": "01. Assessments - Creation and Completion.pdf",
+        "assessments": "01. Assessments - Creation and Completion.pdf",
+        "rc-2324-477": "RC-2324-477-01.pdf",
+        "rc-2324": "RC-2324-477-01.pdf",
+        "induna": "INDUNA - Anti-money laundering and counter-terrorist financing 171220.pptx",
+        "t5 group": "T5 Group audit instructions GAI MAM Update 2018.docx",
+        "t5": "T5 Group audit instructions GAI MAM Update 2018.docx",
+        "template engagement": "Template - Engagement letter SA SICAV SIF.DOCX",
+        "template": "Template - Engagement letter SA SICAV SIF.DOCX",
+        "engagement letter": "Template - Engagement letter SA SICAV SIF.DOCX",
+        "eurazeo": "Eurazeo France - Offre de service - Externalisation du contrôle périodique 2026-2028.pdf",
+    }
+    
+    question_lower = question.lower()
+    for keyword, filename in doc_keywords.items():
+        if keyword in question_lower and filename:
+            # Échapper les apostrophes pour OData
+            escaped = filename.replace("'", "''")
+            return f"name eq '{escaped}'"
+    
+    return None
 
 def search_azure(question: str, top: int = TOP_K, filter_expr: str = None) -> list:
     """Recherche hybride dans Azure AI Search avec reclassement sémantique."""
     vector = _get_embedding(question)
+    
+    # Détecter si la question mentionne un document spécifique
+    doc_filter = detect_document_filter(question)
+    if doc_filter:
+        if filter_expr:
+            filter_expr = f"({filter_expr}) and ({doc_filter})"
+        else:
+            filter_expr = doc_filter
     url = f"{SEARCH_ENDPOINT}/indexes/{SEARCH_INDEX}/docs/search?api-version={SEARCH_API_VERSION}"
     headers = {"Content-Type": "application/json", "api-key": SEARCH_API_KEY}
     
@@ -138,8 +178,11 @@ def generate_answer(question: str, passages: list, history: list = None):
         }
 
     # Seuil de pertinence : si le meilleur reranker est trop bas, on refuse de répondre
+        # Seuil de pertinence assoupli si un filtre document est actif
     best_reranker = max((p.get("reranker") or 0) for p in passages)
-    if best_reranker < 2.0:
+    has_doc_filter = detect_document_filter(question) is not None
+    seuil = 1.0 if has_doc_filter else 2.0
+    if best_reranker < seuil:
         return {
             "answer": "Je n'ai pas trouvé d'élément suffisamment pertinent dans la base documentaire pour répondre à cette question.",
             "sources": [],
@@ -160,6 +203,7 @@ def generate_answer(question: str, passages: list, history: list = None):
     url = f"{AZURE_AI_ENDPOINT}/openai/deployments/{CHAT_DEPLOYMENT}/chat/completions?api-version={API_VERSION}"
     corps = {
         "temperature": 0.0,
+        "max_completion_tokens": 2500,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Historique de la conversation :\n{history_text}\n\nExtraits de la base documentaire :\n\n{contexte}\n\nQuestion : {question}"},

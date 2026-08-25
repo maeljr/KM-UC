@@ -1,0 +1,127 @@
+Since 2012
+Muinmos
+Client Onboarding Platform
+User Guide –
+1. Creation and Completion of
+Assessments
+Date: 15/09/2025
+Version: 2
+Classification: Confidential
+If you are not a Muinmos employee or client or have been authorised by them to view this document,
+please inform Muinmos ApS via info@muinmos.com this document is in your possession / accessible to you;
+do not make any use of it, its content or any part of it, including not disclosing, copying or distributing it in
+any way; and delete it without reading it any further.
+All Rights Reserved. No part of this document may be reproduced, stored in a retrieval system, or
+transmitted, in any form or by any means, without the prior written permission of Muinmos®.
+The Information in this document is provided for orientation, and Muinmos or its affiliates expressly
+disclaim any liability and responsibility for any damage or losses one may suffer from using / relying on it.
+Purpose and Scope
+This document will provide guidance on the creation and completion of new assessments within the Muinmos
+platform.
+The Process in Brief
+Step 1 In the Assessment List, click “Create Assessment” to be brought to the Assessment Creation screen.
+Step 2 In the “Request Assessment” screen, input all relevant information and define the scope of the
+assessment, then click “Create.” An invitation will then be sent to your client to complete the assessment.
+Step 3 In case you are completing the assessment on behalf of the client – you will be brought back to the
+Assessment List. Click on the action wheel to the right-hand side of the screen, for the Assessment you wish
+to action. Click “Take Assessment.”
+Step 4 You will be brought into the client journey. The look and journey may differ depending on your settings.
+Taking each page in turn, fill out the information as required.
+Step 5 When completed, return to the Assessments List by navigating back to the main page using your
+browser and the URL.
+Creating and Completing an Assessment
+The following steps detail the process of creating and completing an assessment. It starts from the Assessment
+List, which contains information on all created assessments.
+Step 1 – The Assessment Dashboard
+The Assessment List can be accessed from the sidebar:
+This will bring you to the Assessment List:
+From here, you can create a
+
+browser and the URL.
+Creating and Completing an Assessment
+The following steps detail the process of creating and completing an assessment. It starts from the Assessment
+List, which contains information on all created assessments.
+Step 1 – The Assessment Dashboard
+The Assessment List can be accessed from the sidebar:
+This will bring you to the Assessment List:
+From here, you can create a new assessment by clicking the “Create Assessment” button on the top left of the
+screen:
+You can also click the “Create” button in the sidebar, as shown above. Doing so will bring you to the Create
+Assessment page.
+Step 2 – The Create Assessment screen
+You will be shown the screen below; include the information as relevant:
+Here is an explanation of the different fields on this screen:
+Assessment Recipient: The person intended to complete the assessment. If you have enabled the “Email
+Invitation” option, then including an email address in this box will prompt the system to send that address an
+email. The email will include a link to complete the assessment. Otherwise, the system takes no action on this,
+but will add the assessment to the Assessment List.
+Reference/Key/ID: An internal reference number or code. It is not unique, so you can have multiple
+assessments with the same key.
+Client Type: Determines the type of client journey that is initiated. Click the appropriate box depending on the
+type of the client.
+Perform mPASS™ Regulatory Assessment: Checking this box will add the mPASS™ Regulatory Classification
+questions to the journey. To remind, the mPASS™ module can determine a client’s category (retail,
+professional etc.), and if the financial services and products they wish to be provided with are suitable /
+appropriatefor them, based on their knowledge & experience, financial situation, investment objectives etc.
+Perform mCHECK™ KYC/AML Assessment: Checking this box will trigger the mCHECK™ KYC/AML module. You
+will then be asked to select a KYC/AML Profile, which will determine the type of checks, questions etc. added
+to the journey. These questions cause you to input and verify the information identifying the client. It is not
+ticked by default.
+Select KYC/AML Profile: This dropdown reveals the available KYC Profiles for your Environment. The KYC
+Profile determines the KYC/AML checks that are performed by the system in the course of an assessment.
+Upload Additional Documents
+
+
+to the journey. These questions cause you to input and verify the information identifying the client. It is not
+ticked by default.
+Select KYC/AML Profile: This dropdown reveals the available KYC Profiles for your Environment. The KYC
+Profile determines the KYC/AML checks that are performed by the system in the course of an assessment.
+Upload Additional Documents: Appends a series of additional document upload questions, determined by the
+list of documents configured in the Request Additional Documents screen.
+After you fill out the information in this screen, click the “Create” button. You will be brought back to the
+Assessment List.
+Step 3 – Taking an Assessment Yourself
+As stated above, you have the option to take the assessment yourself (meaning, go through the assessment
+journey, on behalf of the client).
+Back on the Assessment List, navigate to the Actions wheel, located to the right of the newly-created
+assessment:
+Clicking on it reveals the available actions:
+Clicking on “Take the assessment” brings you to the assessment journey.
+Step 4 – Completing the assessment
+You will be brought to the assessment journey, the first page of which is the acknowledgement page:
+You will then be asked various questions and asked to perform various actions, depending on the content of
+the assessment. The look of the journey may change according to your environment, and any customisations
+that you make. Generally, the journey will progress as you input the available information. A typical page may
+look like this:
+Once you fill in the information, click “Next” in order to advance to the next page.
+If you close the browser window containing the assessment, your progress up to that point will be saved.
+However, any information contained on the page you were on when the window closed, will be deleted.
+Additionally, if at any point you press the “Back” button at the bottom of the page:
+The information will also be deleted from the current and previous pages.
+Upon completing the assessment you will be provided with this screen:
+To navigate back to the main page, delete the highlighted part of the URL, as shown below:
+You will be returned to the Assessment List.
+With that you will have successfully created and completed an Assessment.
+If you have any questions or require further clarification on any of the steps, please reach out to our support
+email, care@muinmos.com, and our team will be happy to assist.
+Appendix 1
+
+ highlighted part of the URL, as shown below:
+You will be returned to the Assessment List.
+With that you will have successfully created and completed an Assessment.
+If you have any questions or require further clarification on any of the steps, please reach out to our support
+email, care@muinmos.com, and our team will be happy to assist.
+Appendix 1 – Archiving & Deleting an Assessment
+To delete an assessment, follow these steps:
+1. Open the Action wheel to the right of the assessment and select "Archive Assessment":
+2. Filter your assessments to show Archived items. To do this, click on the 3 dots beside "Status" and
+click on "Filter":
+Doing so will prompt another dropdown:
+3. Change the topmost filter, "Is Not Equal To" to read "Is Equal To" - this will prompt the system to
+show you all assessments whose Status is "Archived":
+The Dashboard will then filter to show you any archived assessments.
+4. To delete an assessment, click the Action wheel again and select "Delete Assessment:"
+5. You will be given the following screen. Copy the Assessment ID into the box and click "Delete." Please
+note that deleted assessments may never be recovered.
+6. Finally, to reset the Dashboard settings to see your Assessments List as normal, hit "Reset Selection"
+in the upper left of the screen:

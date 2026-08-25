@@ -147,6 +147,25 @@ const enrichSourceData = (
   return { confidence: computedConfidence, snippet, section };
 };
 
+function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) {
+  const [displayed, setDisplayed] = useState("");
+  
+  React.useEffect(() => {
+    setDisplayed("");
+    let index = 0;
+    const interval = setInterval(() => {
+      index++;
+      setDisplayed(text.slice(0, index));
+      if (index >= text.length) {
+        clearInterval(interval);
+      }
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+  
+  return <FormattedAnswer text={displayed} />;
+}
+
 // ========== COMPOSANT FORMATTEUR DE RÉPONSE ==========
 function FormattedAnswer({ text }: { text: string }) {
   if (!text) return null;
@@ -206,6 +225,8 @@ function KnowledgeAssistant() {
   const [showPreview, setShowPreview] = useState(false);
   const [generatedText, setGeneratedText] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [typingText, setTypingText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const [followUp, setFollowUp] = useState("");
 
   type ChatMessage = {
@@ -304,11 +325,13 @@ function KnowledgeAssistant() {
         body: JSON.stringify({ query, lang }),
       });
       const data: RagResponse = await response.json();
+      setIsTyping(true);
       setChatHistory(prev => {
         const updated = [...prev, { role: "user", content: query }, { role: "assistant", content: data.answer, sources: data.sources }];
         localStorage.setItem("haca-chat-history", JSON.stringify(updated));
         return updated;
       });
+      setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
       setRagResponse(data);
       setGeneratedText(data.answer);
       setDeliverable(data.answer);
@@ -338,11 +361,13 @@ function KnowledgeAssistant() {
         body: JSON.stringify({ query: followUp, lang, history }),
       });
       const data: RagResponse = await response.json();
+      setIsTyping(true);
       setChatHistory(prev => {
         const updated = [...prev, { role: "user", content: followUp }, { role: "assistant", content: data.answer, sources: data.sources }];
         localStorage.setItem("haca-chat-history", JSON.stringify(updated));
         return updated;
       });
+      setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
       setRagResponse(data);
       setGeneratedText(data.answer);
       setDeliverable(data.answer);
@@ -509,12 +534,27 @@ function KnowledgeAssistant() {
                       )}>
                         {msg.role === "user" ? (
                           <p className="font-medium">{msg.content}</p>
+                        ) : isTyping && idx === chatHistory.length - 1 ? (
+                          <TypewriterText text={msg.content} />
                         ) : (
                           <FormattedAnswer text={msg.content} />
                         )}
                       </div>
                     </div>
                   ))}
+                  {isSearching && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-secondary text-foreground">
+                        <div className="flex items-center gap-2">
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                          </span>
+                          <span className="text-xs text-muted-foreground">{tr.searching}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -669,12 +709,6 @@ function KnowledgeAssistant() {
         {!ragResponse && !isSearching && (
           <div className="mt-7 text-center text-muted-foreground">
             <p>{tr.noAnswer}</p>
-          </div>
-        )}
-
-        {isSearching && (
-          <div className="mt-7 text-center text-muted-foreground">
-            <p>{tr.searching}</p>
           </div>
         )}
       </main>

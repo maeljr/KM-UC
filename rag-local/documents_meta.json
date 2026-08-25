@@ -132,5 +132,13 @@
     "theme": "Secteur Financier",
     "date_publication": "January 2026",
     "perimetre": "Luxembourg"
+  },
+  "Risk in Copy.pdf": {
+    "title": "Risk in Private Equity New insights into the risk of a portfolio of private equity funds",
+    "type": "Newsletter",
+    "emetteur": "BVCA",
+    "theme": "Risk in Private Equity",
+    "date_publication": "October 2015",
+    "perimetre": "Europe"
   }
 }

@@ -1,0 +1,2272 @@
+Risk in
+Private Equity
+New insights into the risk of a portfolio
+of private equity funds
+Dr. Christian Diller,
+Dr. Christoph Jäckel,
+October 2015
+Montana Capital Partners
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 1
+BVCA Research Paper – October 2015
+About the authors:
+Dr. Christian Diller, Partner Dr. Christoph Jäckel, Vice President
+Christian is a partner and co-founder of Montana Capital Christoph is a Vice President of Montana Capital
+Partners AG, a Swiss investment advisor focussed on Partners AG. Christoph developed and implemented
+attractive niches of the secondary market with more various risk management systems during advisory
+than EUR 600 million Assets under Management as well projects at large and sophisticated investors with multi-
+as high quality asset management services for leading billion portfolios spread over developed and emerging
+and sophisticated investors. markets. He published articles in high quality scientific
+and practitioner’s journals and presented at various
+Christian was previously Head of Solutions at Capital
+conferences.
+Dynamics leading the firm’s structured activities with
+assets under management of more than USD 2 billion. Before joining mcp, Christoph was a research assistant
+He also led the portfolio and risk management activities, at the Department of Financial Management and Capital
+advising some of the world’s largest investors on asset Markets of the Technical University of Munich. His
+allocation, portfolio rebalancing, cash flow planning dissertation dealt with the computation and evaluation
+and risk management in private equity. Prior to that, he of alternative expected return proxies for stocks and
+worked in the asset management department covering was partly written during his stay as a Visiting Scholar
+strategic investments of Allianz Group in industrial, at UCLA Anderson. In addition, Christoph gained
+energy and healthcare companies. Before that, Christian international work experience at Kolbenschmidt Pierburg
+was a buy-side analyst at Pioneer Investments. in Shanghai, Capital Dynamics in Zug, and Lehman
+Brothers in London.
+Christian is chairman of the EVCA risk management
+committee developing guidelines for risk management Christoph holds a Dr. rer. pol. in finance from the
+models in private equity and was involved in discussions Technical University Munich and a diploma degree in
+with European regulators on regulation of private equity business administration specializing on capital markets
+under Basel III and Solvency II. He regularly published and operations research at the Technical
+
+CA risk management
+committee developing guidelines for risk management Christoph holds a Dr. rer. pol. in finance from the
+models in private equity and was involved in discussions Technical University Munich and a diploma degree in
+with European regulators on regulation of private equity business administration specializing on capital markets
+under Basel III and Solvency II. He regularly published and operations research at the Technical University of
+in high-quality journals, co-authored a book on risk in Munich and at the National University of Singapore.
+illiquid assets and speaks at conferences.
+Christian holds a Dr. rer. pol. in finance specializing on
+risk-/return characteristics of private equity funds from
+the Technical University Munich and a MSc from the
+Ludwig-Maximilian University Munich.
+Many thanks:
+We would like to thank Pevera and Preqin for providing their datasets for this analysis. We also would like to
+thank the BVCA Research committee as well as Gillian Brown (Rubato Associates) for their valuable comments
+to our paper.
+Disclaimer:
+The information contained in this report has been produced by the authors, mcp and BVCA, based on data from
+the BVCA, Pevera and Preqin and third parties information. While the authors, mcp and BVCA, have made every
+effort to ensure the reliability of the data included in this report, the organisations cannot guarantee the accuracy of
+the information collected and presented. Therefore, the organisations cannot accept responsibility for any decision
+made or action taken based upon this report or the information provided here. This paper also does not represent
+any investment recommendation or any kind of advice to any institution or person.
+2 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+1. Introduction
+Due to the specific characteristics of private equity investments, the
+standard risk management tools that are used in other asset classes are
+unlikely to be applicable. Instead, there are specific risks in private equity
+that an institutional investor should be aware of. In this study, we assess
+and measure the most significant risks in private equity, and examine
+in detail how these risks can be reduced. We contend that the most
+significant risks in the asset class are those of market risk, funding risk,
+liquidity and capital risk, and our empirical analysis of three different
+private equity datasets finds that both funding and capital risk can
+be substantially reduced through diversification. In the study, we also
+measure
+
+, and examine
+in detail how these risks can be reduced. We contend that the most
+significant risks in the asset class are those of market risk, funding risk,
+liquidity and capital risk, and our empirical analysis of three different
+private equity datasets finds that both funding and capital risk can
+be substantially reduced through diversification. In the study, we also
+measure “Realisation Risk”, an analysis on losing value from the point
+of observation until the end of fund’s life, for the first time in a study on
+risk analysis in private equity. Our results demonstrate that the risk for
+an investor of losing any capital over the entire holding period with a
+portfolio of 20 funds is only 1.4%, reducing to under 1% for an investor
+with a portfolio of 50 funds, adjusting for capital calls and distributions.
+These results demonstrate that private equity is not as risky as it is often
+perceived by some market participants, and that risk in the asset class
+should be conceptualised in a different way than it currently is.
+Although private equity has become an increasingly established asset class for institutional investors
+over recent decades, the issue of risk within the industry remains relatively underexplored. Private
+equity is a long-term asset class which generates strong returns for investors, and given the current
+low interest rate environment, may be particularly attractive to institutional investors who are seeking
+sustainable returns.1 Some of the largest pension funds have had positive experiences with private
+equity since the early 1970s and have current private equity allocations of around 25%.2 Other long-
+term, non-regulated investors such as family offices sometimes have even higher allocations to the
+asset class with a private equity allocation comprising more than a third of their total assets.3 While
+many of these sophisticated investors value the long-term risk-return characteristics of the asset class,
+regulators are often perceived as constraining banks and insurance companies from investing into the
+asset class or forcing them to divest their holdings as they perceive private equity as being too risky.
+Due to its long-term investment horizon, its illiquidity and its unique structural characteristics, private
+equity has its own set of specific risks. These risks differ from those in public markets, and as such, can
+be more difficult to understand and capture in traditional risk models. As typical risk measures cannot
+be used and as the average performance is often considered to be higher than in public markets,
+
+ horizon, its illiquidity and its unique structural characteristics, private
+equity has its own set of specific risks. These risks differ from those in public markets, and as such, can
+be more difficult to understand and capture in traditional risk models. As typical risk measures cannot
+be used and as the average performance is often considered to be higher than in public markets, risk
+in private equity is often perceived as being high. But how risky is private equity in reality? What are
+the risks for investors who invest in a portfolio of private equity funds? How can an investor mitigate
+these risks? Can an investor lose part or even all of an investment into a portfolio? How high is the risk
+that an investor does not get back the value that is generated during a fund’s lifetime? What factors
+need to be taken into account when investing into the asset class, and what are the differences with
+public equities?
+1 See Cornelius (2011), Chapter 6.
+2 See Diller/Wulff (2012), p.12 as well as webpages of Washington State Pension Fund (WSIB), CalPERS and OPERF (Oregon Public
+Employee Retirement Fund) for up-to-date information.
+3 See survey from Montana Capital Partners and Private Equity International 2014 in PEI (2014).
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 1
+This BVCA paper provides answers to these questions. It starts with a chapter describing the risks of
+private equity investments, which can be categorised into market risk, funding risk, liquidity risk and
+capital risk. Each risk factor will be defined and examined in detail and a demonstration will be provided
+on how that risk can be reduced.
+The main section of the paper focuses on empirical risk analyses for a typical investor when investing into
+a portfolio of private equity funds. We run analyses to show the extent of the market risk, funding risk,
+liquidity risk and capital risk for an investor. As capital risk (the risk of losing any capital) is one of the most
+important, we focus on this risk and run various analyses. The results show evidence that an investor
+has a very low probability of losing any capital over the lifetime of the funds when investing in a diversified
+private equity portfolio with a number of funds. We then go a step further and run a risk analysis on the
+value generated over the lifetime of a portfolio. This research
+
+important, we focus on this risk and run various analyses. The results show evidence that an investor
+has a very low probability of losing any capital over the lifetime of the funds when investing in a diversified
+private equity portfolio with a number of funds. We then go a step further and run a risk analysis on the
+value generated over the lifetime of a portfolio. This research paper contains the first analysis of the risk
+of losing any (book) value from the point of observation until the end of a fund’s lifetime,4 which we call
+“Realisation Risk”. Doing so reflects the typical situation of an investor who reports a value at the end of
+the year and needs to measure their risk of not getting back the current value of their portfolio in cash.
+As this is the typical situation for an investor and for regulators, this analysis provides crucial insight into
+the real risk of managing a private equity portfolio.
+One of the major advantages of this study is the use of three different datasets which are widely used in
+the industry and are regarded as being accurate representations of the market in which a typical investor
+invests. All three datasets contain a large number of private equity funds with the following advantages:
+Pevara dataset: Pevara, a subsidiary of e-front, tracks cash flows provided by limited partners which are
+subject to their rigorous data validation process.
+BVCA dataset: This dataset has unique characteristics as it has no selection bias or survivorship bias in
+the data. The dataset has been collected by the BVCA directly from their membership and is one of the
+most accurate in the industry. When a fund enters the database it is tracked until the end of its lifetime.
+This is especially significant for regulators as it takes away most of their criticism towards typically used
+private equity data.
+Preqin dataset: The dataset from Preqin is collected from various sources and is widely used in the
+industry. It has been collected from LPs and GPs and is checked by Preqin.
+The results of the empirical analyses are robust for the three different datasets. In summary, we
+demonstrate that the risk for a diversified portfolio is extremely low for an investor who is able to
+hold their assets to maturity. Not only can capital calls and distributions be forecasted accurately, but
+the probability of losing the invested capital or the already accrued book value at any given time is
+very low. As such, these results indicate that the risks of private equity are manageable and
+
+ that the risk for a diversified portfolio is extremely low for an investor who is able to
+hold their assets to maturity. Not only can capital calls and distributions be forecasted accurately, but
+the probability of losing the invested capital or the already accrued book value at any given time is
+very low. As such, these results indicate that the risks of private equity are manageable and that the
+asset class offers attractive returns, adding to the overall diversification across the whole portfolio for
+institutional investors.
+4 During the process of writing this study, we became aware of Barber / Yasuda (2014), who calculate the same measure, which they label Pseudo
+Value Multiples (PVM). However, they use this measure for a different research question: While we want to measure the risk of not getting back the
+current valuation in a portfolio of private equity funds, they use this measure to determine whether funds that are fundraising return reliably less than
+other funds, conditional on the current valuation. This result helps them in arguing that funds that are currently fundraising are inflating their valuations
+to attract more commitments. This is also why they do not show any summary statistics for their PVM, but only the final regression results, while we
+show in detail how this measure develops over time.
+2 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+2. What are the main types
+of risks in private equity?
+Risk management in private equity is different to public markets for
+several reasons due to the nature of private equity investments.
+First, private equity is an equity investment into non-quoted companies. As the companies are not traded
+on a secondary market like the shares of publicly listed companies, there is no market price available on a
+regular basis. Only if the company is sold to another investor can true market values be observed, but this
+typically only happens after a number of years. Due to the lack of regular market prices, the typical and
+well-known risk measures of public markets, such as volatility, value-at-risk or shortfall-risk, cannot be
+used in private equity. Because of this lack of availability of market prices, fund managers derive a value
+for each company using one of the industry’s standard valuation methods; e.g. market comparables,
+discounted cash flow methods or others.5 These net asset values (NAV) are not market prices. Rather,
+they are similar to accounting values and are reported to investors
+
+used in private equity. Because of this lack of availability of market prices, fund managers derive a value
+for each company using one of the industry’s standard valuation methods; e.g. market comparables,
+discounted cash flow methods or others.5 These net asset values (NAV) are not market prices. Rather,
+they are similar to accounting values and are reported to investors on a quarterly basis to provide them
+with an indicative price for their investment based on valuations of the unrealised investments held. Even
+if these NAVs are sometimes used to calculate a risk measure, it is important to understand that they
+are not based on actual market transactions. Consequently, they can differ from true fair market values.
+This will be analysed in detail in further sections, but it is important to note from the outset that this
+characteristic of private equity makes it difficult to adequately measure market risk for the asset class.
+Second, a typical pension fund, insurance company, bank or family office does not invest directly into a
+company. In the large majority of cases, a fund is used as the investment vehicle because the professional
+fund manager has both the experience and knowledge to source and select the investments, manage
+them actively, adjust the strategy of the company in order to create more value, monitor the company,
+and sell it after an average holding period of five years. The typical investment is done through a closed-
+end Limited Partnership structure. Here, investors are the Limited Partners (LP) who commit an amount
+of capital at the beginning of the life of the partnership with the legal obligation to pay this capital into
+the fund whenever the fund manager (General Partner; GP) calls for it.6 When the fund manager has
+identified an attractive investment opportunity in a company, they will draw down the capital from the
+investor; usually this will be done during an investment period of five years. Thereafter the investment
+will be held and exited. In total, LP structures tend to be set-up for a long-term horizon of 10 years with
+no redemption rights for investors. They can only try to liquidate their stake at the secondary market
+for – depending on the market situation and external factors –a potentially large discount, due to the
+illiquidity and inefficiency of this market. In addition, sales negotiations can typically take several weeks to
+complete. As such, an investor in private equity can run a liquidity risk.
+Lastly, an investor does not pay in all
+
+ate their stake at the secondary market
+for – depending on the market situation and external factors –a potentially large discount, due to the
+illiquidity and inefficiency of this market. In addition, sales negotiations can typically take several weeks to
+complete. As such, an investor in private equity can run a liquidity risk.
+Lastly, an investor does not pay in all of their capital on the first day; rather, the money is drawn from
+the fund over time. This represents a specific risk for investors, which is of course a result of the typical
+fund structure discussed in the previous paragraph; i.e. funding risk. If the investor is not able to pay the
+capital call in accordance with the terms of the partnership agreement, they default on their payment. In
+such a case, the investor might lose the entire investment and all the capital which they already paid into
+the fund. Many fund managers have strict rules in their Limited Partnership Agreements in the case of
+a defaulting investor. Typically, the investor will lose their entire investment; in some cases they still hold
+the liabilities. This strict mechanism is important for the fund manager as they need to have the highest
+possible security to fund the investments they would like to acquire. In addition to the risk of not being
+able to fulfil their own undrawn commitment; each investor can be adversely impacted as a result of other
+5 For more details on valuations in private equity see: IPEV - International Valuation Guidelines for private equity 2012. Up-to-date information on:
+http://www.privateequityvaluation.com/
+6 See for a more detailed description Cornelius et al. (2013) Chapter 4.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 3
+investors defaulting.7 Hence, liquidity and funding risks arising through unfunded commitments are an
+important element and need to be reflected in sophisticated risk management systems.8
+Liquidity Risk Funding Risk
+Market Risk – Interim NAV risk Capital Risk
+(short- and mid-term) (mid- and long-term)
+Figure 1: Key risks in private equity
+In summary, the risks shown in Figure 1 can be identified and defined in private equity. The EVCA Risk
+Measurement Guidelines use the following categories and definitions:
+Funding risk: The unpredictable timing of cash flows poses funding risks to investors.
+Commitments are contractually binding and defaulting on payments
+
+- and long-term)
+Figure 1: Key risks in private equity
+In summary, the risks shown in Figure 1 can be identified and defined in private equity. The EVCA Risk
+Measurement Guidelines use the following categories and definitions:
+Funding risk: The unpredictable timing of cash flows poses funding risks to investors.
+Commitments are contractually binding and defaulting on payments results in the loss of private
+equity partnership interests. This risk is also commonly referred to as default risk.
+Liquidity risk: The illiquidity of private equity partnership interests exposes investors to asset
+liquidity risk associated with selling in the secondary market at a discount on the reported NAV.
+Market risk: The fluctuation of the market has an impact on the value of the investments held in
+the portfolio.
+Capital risk: The realisation value of private equity investments can be affected by numerous
+factors, including (but not limited to) the quality of the fund manager, equity market exposure,
+interest rates and foreign exchange.9
+2.1 How does a private equity risk
+framework compare with the public
+market ones?
+In this section, we outline a typical private equity risk framework as described above with the risk
+framework of an institutional investor in public markets. The public market risk framework is frequently
+used by regulators such as EIOPA, ESMA and EBA and we find its application in regulations for banks
+by the Basel Committee; for insurance companies under Solvency II or for pension funds under IORPD.
+The typical risks are defined and categorised as:
+Market risk: Change in value of the underlying assets/price volatility
+Credit risk: Loss of assets due to issuer’s credit events
+Liquidity risk: Redemption possibility of the investment at the moment when the investor chooses
+to get their money back
+Funding Risk: Ability to fund future liabilities
+7 Sometimes other LPs need to pick-up the defaulting LPs share or the fund size may have to be reduced, so leading to an increased concentration
+of the portfolio and explains why default provisions are so tough. However this risk is rather limited compared to the other factors as the stake can
+be sold on the secondary market.
+8 See for a similar characterization: Buchner (2014), Cornelius et.al. (2013), EVCA Private Equity Fund Risk Measurement Guidelines (2012),
+and Kaserer / Wagner / Achleitner (2003), Diller / Kaserer (
+
+ rather limited compared to the other factors as the stake can
+be sold on the secondary market.
+8 See for a similar characterization: Buchner (2014), Cornelius et.al. (2013), EVCA Private Equity Fund Risk Measurement Guidelines (2012),
+and Kaserer / Wagner / Achleitner (2003), Diller / Kaserer (2009), Driessen, Lin, Phalippou (2007), Gottschalg (2007), and Mathonet / Meyer
+(2005).
+9 EVCA Risk Measurement Guidelines (2013), p. 12-14.
+4 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+It should be noted that credit risk is similar to capital risk in private equity, although there are several
+factors that make up capital risk, rather than the more narrow definition reflected in the term credit risk.
+One of the most important differences is that credit risk reflects no upside potential through positive
+outliers in its return distribution, while it plays an important role in capital risk as some transactions return
+a high multiple and are not limited to the return of capital as in a credit case. A more detailed comparison
+of the various risk factors can be found in the table below.
+The following table compares the risks in public and private markets:
+PubliC Markets PriVate Markets
+Market risk Change in value/price Difficult as no market prices exist. The closest Market/NaV
+estimation might be “Interim NAV volatility” Volatility risk
+(short & mid-term)
+Credit risk Loss of assets due to Credit risk is only part of risk in private equity and
+Capital risk
+issuer’s credit events is more akin to any risks associated with the GP’s
+(mid- & long term)
+abilities and the various “external” factors which
+can impact a PE investment. Credit risk models
+overestimate risks as they only reflect downside
+and not the large potential upside in private equity
+liquidity risk Redemption possibility; No redemption possibility, but still relatively small liquidity risk
+liquidity when selling assets and inefficient secondary market exists
+Funding risk Investors not able to finance Risk that the legal obligation to pay commitments Funding risk
+future liabilities cannot be funded by the investor
+Table 1: Matching table between risk definitions in public and private markets.
+While it is easier to find a match between the liquidity and funding risks of private and public markets, it
+is
+
+ when selling assets and inefficient secondary market exists
+Funding risk Investors not able to finance Risk that the legal obligation to pay commitments Funding risk
+future liabilities cannot be funded by the investor
+Table 1: Matching table between risk definitions in public and private markets.
+While it is easier to find a match between the liquidity and funding risks of private and public markets, it
+is more difficult to assess the market and credit risks. Private equity has elements of both credit risk and
+equity risk. While the focus of credit risk is that the investor does not lose any capital and has no upside
+potential, in private equity upside can be created through the “added value” of active ownership, which
+helps increase the value and improve the growth of the business.
+However, the equity risk element is difficult to measure and observe due to the lack of market prices. An
+alternative to obtain an estimation of market risk is the calculation of the NAV volatility. But this statistic
+only covers parts of the underlying risk as NAVs are only quarterly valuations that may not entirely reflect
+the true underlying value of the assets.
+The risk of investment loss cannot be measured through credit risk models because they “only reflect
+downside risk while the significant upside of fund investments is ignored. Aggregating just the probability
+of default (PD)/loss given default (LGD) figures for individual funds, even when factoring in diversification
+benefits resulting from correlations between individual funds defaulting, will produce overall risk weights
+for portfolios of funds that are excessive. Diversified portfolios of funds are significantly less risky than
+every individual fund as the upside of well performing funds compensate for the losses from “defaulting”
+funds.”10
+10 EVCA Risk Measurement Guidelines (2013), p. 10.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 5
+Therefore, a combination of credit and equity models needs to be used to derive a similar risk for
+private equity. Many researchers and practitioners – ourselves included – use Monte Carlo simulation
+techniques to derive the capital risk of an investment. This is described in further detail in the empirical
+section of this study.
+In summary, it can be seen that while the use of the same risk factors for both private equity and the
+public markets is difficult, it is still possible to measure and calculate similar risk measures. We will
+explore this further in the remainder of this paper.
+2
+
+ risk of an investment. This is described in further detail in the empirical
+section of this study.
+In summary, it can be seen that while the use of the same risk factors for both private equity and the
+public markets is difficult, it is still possible to measure and calculate similar risk measures. We will
+explore this further in the remainder of this paper.
+2.2 Funding risk
+Funding risk, also referred to as default risk within the private equity industry, is the risk that an investor
+is not able to pay their capital commitments to a private equity fund in accordance with the terms of
+their obligation to do so. If this risk materialises, an investor can lose their full investment (according to
+typical LPA rules) including all paid-in capital, which is why it is of paramount importance for investors to
+manage their cash flows to meet their funding obligations effectively.
+The financial crisis in 2008 highlighted the importance of managing funding risk. Since then, regulators
+have focused more on funding risk and have issued principles for sound funding & liquidity risk
+management.11 But how does funding risk occur when managing a private equity portfolio? In general,
+there are two reasons: (i) over-commitment and (ii) market distortion in capital calls and distributions.
+The first possible reason for running into liquidity issues is an over-commitment strategy of some
+investors. As private equity funds typically do not draw all of their committed capital or as some
+companies have already been exited before all the commitment has to be paid in, the net liquidity need
+is typically smaller than the commitment size. Therefore, investors need to run an over-commitment
+strategy to avoid being permanently under-exposed to their strategic allocation to the asset class.
+In case of market turmoil, however, an over-commitment strategy may result in severe issues for an
+investor as they may be required to pay out more money to meet commitment obligations than they
+had anticipated or than is available.
+Secondly, investors who have been running a private equity portfolio for some years typically use the
+distributions of mature private equity funds to finance the capital calls of young funds (self-funding
+strategy). Depending on the maturity of the existing portfolio, a private equity programme can be set-up
+and managed in a way that the capital calls and distributions are in a steady state and can be matched
+accordingly. As such, no additional capital needs to be put into the private equity programme as
+
+ equity funds to finance the capital calls of young funds (self-funding
+strategy). Depending on the maturity of the existing portfolio, a private equity programme can be set-up
+and managed in a way that the capital calls and distributions are in a steady state and can be matched
+accordingly. As such, no additional capital needs to be put into the private equity programme as this is
+self-financing in normal market conditions. Indeed, it is common for mature private equity fund portfolios
+to have problems of how to ensure a desired level of exposure is maintained, as the level of distributions
+outstrips the level of new commitments being drawn, and so the overall level of exposure to private
+equity declines.
+However, if a market distortion suddenly occurs and distributions are missing because exit activity on
+underlying companies dries up, investors may run into problems as they would require additional capital
+from external sources to meet their commitments. Other external sources could be: (i) regular capital
+inflow from a main business; e.g. insurance, pension funds, etc.; (ii) availability of cash; (iii) sale of liquid
+assets such as government bonds or company bonds; (iv) sale of listed stocks; or (v) sale of any other
+investment, potentially including their private equity funds, on the secondary market. If an investor has
+a regular and market independent source of capital inflow or only a small allocation to illiquid asset
+classes, this mismatch of distributions and capital calls will not have a big impact on its funding risk.
+As insurance companies, banks and pension funds typically have a regular source of income and often
+have a large allocation to liquid asset classes like bonds and listed equities, funding risk generally has
+less weight for them. However, this depends on the individual composition and situation of an investor.
+11 See BIS (2008).
+6 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+For investors with limited flexibility on external cash sources or large allocations to private equity –
+namely listed private equity vehicles, fund of funds, university endowments and family offices – funding
+risk can be very important.
+When reflecting on the last financial crisis, some investors faced severe funding issues. The most
+prominent case was from the university endowment of Harvard Management Corporation who issued
+a bond of more than USD 1bn to fund their future capital calls and considered selling a private equity
+
+
+ of funds, university endowments and family offices – funding
+risk can be very important.
+When reflecting on the last financial crisis, some investors faced severe funding issues. The most
+prominent case was from the university endowment of Harvard Management Corporation who issued
+a bond of more than USD 1bn to fund their future capital calls and considered selling a private equity
+portfolio of around USD 1.5bn, when the average discount on the secondary market was between 40%
+and 50%. Even CalPERS (the largest US pension fund) sold some of their listed stocks in order to be
+prepared for potentially paying future capital calls for private equity funds according to an article in the
+Wall Street Journal.12 Listed private equity vehicles which ran an over-commitment strategy experienced
+similar issues. APEN, a Swiss listed vehicle had to go through significant restructuring, adding a new
+financial structure as well as selling on the secondary market so as not to lose any of its private equity
+assets.
+It should be noted, however, that many pension funds and insurance companies investing in private
+equity did not have to take drastic measures during this time period and were able to cope with the
+change in cash flow profile because they managed their risks from the outset by limiting their allocation
+to private equity. Additional reasons for the limited allocation to private equity have been the possibility for
+them to match it with their incoming cash flows, the possibility to liquidate other liquid assets beforehand
+and having more diversified portfolios.
+How can funding risk be measured and which solutions are possible?
+Funding risk can be measured through a “funding test” or through cash flow models which take extreme
+cases into account. The funding test places the undrawn commitments in relation to the resources
+available for commitments.13 Alternatively, a cash flow model provides the investor with a simulation of
+the expected capital calls and distributions in the future. It is very important that extreme scenarios are
+also considered in which capital calls are much higher than distributions and, hence, large amounts of
+outside capital are necessary.
+How can funding risk be reduced?
+Investors can reduce the risk by assessing their future commitment plan with cash flow simulations and
+cautious planning. Investors who have limited external capital available or large allocations to illiquid
+assets should be more cautious on the over-commitment and self-funding strategy. However, when
+deciding on such a strategy, investors should be aware of possible extreme scenarios and
+
+ reduced?
+Investors can reduce the risk by assessing their future commitment plan with cash flow simulations and
+cautious planning. Investors who have limited external capital available or large allocations to illiquid
+assets should be more cautious on the over-commitment and self-funding strategy. However, when
+deciding on such a strategy, investors should be aware of possible extreme scenarios and how much
+cash would be necessary and how this could be obtained from other sources. A strategic plan for these
+extreme cases as well as the portfolio construction plan is the key element.
+2.3 Liquidity risk
+Liquidity Risk is the risk that an investor is unable to redeem their investment at the time of their choosing.
+We have already noted that private equity fund structures are designed so that the investor remains in the
+fund for its full term without an opportunity to redeem their commitment. As a result of these structures,
+however, a secondary market for LP commitments (participations) has evolved. Consequently, liquidity
+risk may also be regarded as the risk that an investor wants to sell their private equity investment (in the
+form of a fund commitment) on the secondary market, but the market does not offer enough volume or
+efficiency for a fair trade.
+12 Karmin and Lublin, „Calpers sells stock amid rout to raise cash for obligations“, Wall Street Journal, 25 October 2008.
+13 See Cornelius et al. (2013) p.114ff.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 7
+While a secondary market for LP stakes in private equity has developed over the years, the secondary
+market for private equity investments is still relatively small when compared to the total size of the private
+equity fund market. It is also still somewhat inefficient, especially in trading smaller fund positions. The
+secondary market is not a liquid market efficiently setting “prices” as can be found in any listed market
+from quoted shares. Even though the secondary market volumes have increased over the last years
+and volumes have reached a record level of around USD 40 billion in 2014, it is still only 3% to 5% of the
+primary volume (see Figure 2).
+Figure 2: Global secondary transaction volume. Source: mcp analysis based on data provided
+by Cogent and Evercore.
+Competition for larger transactions has increased as the market has become more efficient through the
+
+
+ USD 40 billion in 2014, it is still only 3% to 5% of the
+primary volume (see Figure 2).
+Figure 2: Global secondary transaction volume. Source: mcp analysis based on data provided
+by Cogent and Evercore.
+Competition for larger transactions has increased as the market has become more efficient through the
+use of professional intermediaries. These intermediaries run auctions for the seller in order to optimise
+the price. Figure 3 shows market prices of a large intermediary and gives an indication of price levels
+since 2007.
+8 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+)VAN
+fo
+%(
+secirP
+yradnoceS
+2001
+120%
+Buyout All Strategies
+110%
+100%
+90%
+80%
+70%
+60%
+50%
+40%
+2007 2008 2009 2010 2011 2012 2013 H1 2014 H2 2014
+Figure 3: The chart depicts the average high first round bid as % of NAV for buyout funds and
+all strategies funds. Source: Cogent Partners (2015).
+nb
+DSU
+nI
+50
+45
+40
+35
+30
+25
+20
+15
+10
+5
+0
+2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014
+Moreover, secondary market prices are often significantly influenced by factors unrelated to the fair
+value of the partnership, which result in prices being discounted. For instance, investors selling from a
+distressed position often have to accept discounts to reported NAV.14
+How can liquidity risk be measured and which solutions are possible?
+Liquidity risk in private equity is difficult to measure. While the secondary market can be very active in
+a normal market environment and during boom phases, this level of activity is far from what one would
+see in even the most illiquid of listed markets. Moreover, the secondary market was shut down during
+the financial crisis in 2009 with very low trading volumes. As such, the liquidity risk for investors in private
+equity seems to be high due to inefficient secondary markets.
+How can liquidity risk be reduced?
+Liquidity risk in private equity is difficult to reduce,
+
+ in even the most illiquid of listed markets. Moreover, the secondary market was shut down during
+the financial crisis in 2009 with very low trading volumes. As such, the liquidity risk for investors in private
+equity seems to be high due to inefficient secondary markets.
+How can liquidity risk be reduced?
+Liquidity risk in private equity is difficult to reduce, although it is simpler to handle for investors in an
+overall asset allocation model. If an investor is solely focused on private equity assets and they need to
+sell in difficult market times, they cannot circumvent the liquidity risk. However, if private equity is only a
+small part of a well-diversified asset allocation, as is the case for many insurance companies, pension
+funds and banks, many other assets are more liquid and can be traded. In reality, the experience is that
+banks or insurance companies use the secondary market in years of high prices to sell their assets and
+do not use it frequently in distressed markets.
+Furthermore, this depends largely on the market period. While in some years the market for large
+transactions seems to be very efficient with multiple buyers bidding for large, well known fund portfolios
+in a very short timeframe (as in 2013-2015), it can be more difficult in others. As previously discussed
+in the funding risk section, since most investors have other assets which are easier to liquidate in times
+of financial instability than private equity, it is recommended to run a funding test and sell other assets
+before selling private equity funds.
+2.4 Market risk
+Market risk is the risk of holding an asset which can be traded on a (secondary) market and whose
+value changes over time. This risk often refers to equity in listed companies through the purchase
+of stocks. As the main risk factors for public equity are market risk measures, academics and
+practitioners often try to fit private equity into this framework as well. Due to the lack of real continuous
+market prices for private equity, quarterly net asset values are often used as substitutes for market
+prices. These substitutes must be used as the secondary market in private equity is neither large nor
+efficient enough, and the data is not readily available, so that prices from this market could be used
+instead. With NAVs as substitutes, it is possible to calculate typical public market measures such as
+periodic returns, their volatilities and correlations with returns from other asset classes.
+In private
+
+ must be used as the secondary market in private equity is neither large nor
+efficient enough, and the data is not readily available, so that prices from this market could be used
+instead. With NAVs as substitutes, it is possible to calculate typical public market measures such as
+periodic returns, their volatilities and correlations with returns from other asset classes.
+In private equity, market risk is often defined as the quarterly change (return) of the net asset value
+adjusted by the cash flows between the two observations.15 Changes between two quarters are
+mainly due to the performance of the underlying portfolio company or the financial structure. The
+revenues and EBITDA or the financial structure could have changed, such that its net asset value
+increases or decreases. Market factors, like stock market performance through comparison methods,
+also affect the short-term value of the investment. Similarly FX movements can have a large impact on
+the value of the company.
+14 See Diller / Wulff (2013).
+15 Please note the adjustment of the cash flows might also have an influence on the development and change of the quarterly net asset value. In some
+extreme cases, when capital calls are very high and many new investments are taken into the calculation, the quarterly movement is expected to
+be lower as fund managers tend to keep valuation constant at cost during the first time period. In other extreme cases when exit activity is high,
+quarterly NAV movement might be driven by large uplifts. These issues are especially important when calculating this measure for only a small set of
+observations and should have less influence in a larger diversified portfolio.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 9
+However, it is important to note that the results are heavily dependent on decisions made by the fund
+managers and their auditors. It should also be noted that market events such as the 2008 financial crisis
+are only reflected in fund valuations with a lag and that, in general, valuations are smoothed over time.16
+For example, US funds were not obliged to apply fair market value standards before 2008. As a
+consequence, they often kept the valuations of the underlying companies at cost until their realisations.
+The time-series of such a fund that decides to value all investments at cost would show no volatility
+until the companies exit and no correlation with public markets. Of course, no investor would take this
+
+
+ obliged to apply fair market value standards before 2008. As a
+consequence, they often kept the valuations of the underlying companies at cost until their realisations.
+The time-series of such a fund that decides to value all investments at cost would show no volatility
+until the companies exit and no correlation with public markets. Of course, no investor would take this
+as evidence that the fund serves as a great investment with regards to the diversification properties in
+the overall portfolio, but simply as a result of the poor data quality. In addition, there are more subtle
+reasons why valuations differ from the true underlying value. For example, Barber and Yasuda (2014)
+and Jenkinson et al. (2013) show that some funds inflate their valuations to increase their chances for a
+successful fundraising.
+How can market risk be measured and which solutions are possible?
+As the NAVs are available on a quarterly basis, statistics that are applied to continuously traded securities
+can also be used for private equity investments, such as the volatility of the NAV-based return time series
+on a quarterly basis. However, as mentioned above, such unadjusted time series would unfairly favour
+private equity investments over the stock market and therefore should not be used.
+To still allow for a simple comparison with other asset classes, there are approaches to de-smooth those
+NAVs before running risk analyses.17 Other analyses focus on the time-lag of reporting.18 However, it is
+debatable how well such adjustments work for private equity returns. Furthermore, results based on
+such market risk measures are centred on the implicit assumption that the quarterly NAVs are actual
+market values which an investor could buy and sell. This is not true for private equity investments and as
+such the results can give an investor a misleading view on their investment. Rather, they should focus on
+the long-term properties of private equity as it is inherently a long-term asset class. This is also why this
+report focuses primarily on capital risk and only focuses briefly on market risk.
+How can market risk be reduced?
+Market risk as the quarterly change of the net asset value is a short-term risk measure and, therefore,
+also depends on the short-term movement of public and FX risks. As such, if the portfolio is largely
+diversified over various geographies, markets and industries, this volatility can be minimised.
+2.5 Capital risk
+Closely related to market risk
+
+Market risk as the quarterly change of the net asset value is a short-term risk measure and, therefore,
+also depends on the short-term movement of public and FX risks. As such, if the portfolio is largely
+diversified over various geographies, markets and industries, this volatility can be minimised.
+2.5 Capital risk
+Closely related to market risk is capital risk for the investor. Capital risk for the investor is defined as the
+probability of losing capital with a private equity portfolio over its entire lifetime.19 As a consequence,
+the investor would have a realised loss in their portfolio, while market risk is based on unrealised
+values. Similarly to market risk, capital risk is driven both by internal and external factors.
+In the long-term, the development of the underlying companies in a fund portfolio affects the
+performance and the capital risk of the investments. The positive operational development of the
+companies and their financial situation is a substantial source of value creation for investors. As such,
+the fund manager spends a significant amount of time working with the management analysing and
+improving the companies’ strategies during their holding periods in order to exit the company to a
+value above the investment cost. The conditions of the exit market, method and timing of the exit can
+also be a route through which the fund manager can create value for investors. As many investors
+16 See, for example, Getmansky / Lo / Makarov (2004) and Emery (2003).
+17 Getmansky / Lo / Makarov (2004).
+18 Emery (2003).
+19 Mathonet / Meyer (2005) and Mathonet / Weidig (2004).
+10 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+hold a portfolio of private equity funds and are exposed to hundreds of portfolio companies, the
+idiosyncratic risk of each company gets diversified. It is important to mention that the positive side
+of diversification in private equity is that the statistical distribution is skewed towards positive returns.
+Therefore, positive outliers can recover losses of individual companies and the same is true for funds.
+This is significantly different to loan models in which the maximum achievable value is to get back
+the nominal value. Instead, in private equity positive outliers can recover poorly performing funds. In
+addition to these company specific risks, equity markets, together with the interest rate level and the
+availability of debt and refinancing
+
+ losses of individual companies and the same is true for funds.
+This is significantly different to loan models in which the maximum achievable value is to get back
+the nominal value. Instead, in private equity positive outliers can recover poorly performing funds. In
+addition to these company specific risks, equity markets, together with the interest rate level and the
+availability of debt and refinancing possibilities, affect the long-term risk for investors to lose capital.
+If fund managers are unable to refinance their companies on the market or if they are not able to exit
+them at attractive equity prices, managers may lose some of the equity in their portfolio companies.
+These factors are external and are difficult to influence. Investors can influence their long-term risks
+when investing in private equity, mainly through diversification. Academic studies and practitioners
+have consistently shown that diversification over multiple private equity funds and over many years is
+the best and most important capital risk reduction mechanism in private equity. Through a high degree
+of diversification in companies in different regions, industries and stages of funding, which have been
+purchased over various market conditions, the right skewed dispersion of returns is achieved, and
+long-term capital risk can be reduced substantially.
+How can capital risk be measured and which solutions are possible?
+For liquidated or mature funds, the ratio between distributions and paid-in capital can be used as a
+measure for capital risk (DPI). If this ratio is below one for a specific investment, an investor has lost
+money. This measure can be calculated on the portfolio level of the investor, on the fund level and on
+the portfolio company level. For funds that are still active, the residual NAV should be added to the
+numerator to measure total value to paid-in capital (TVPI). This measure is then dependent on the
+quality of the reported NAV.
+While the TVPI is a backward-looking measure, comparing the distributions that have been received as
+well as the current NAV with capital calls that have to be made so far, we argue that an investor is also
+interested in the risk of losing money going forward. Given that their investment currently stands at a
+certain book value as reported by the fund manager, how likely is it that an investor will not get this book
+value back as distributions? To calculate this risk, which we call Realisation Risk, we propose a new risk
+measure which we describe in detail in Chapter 5.
+As most of the long-term investors focus on
+
+ that their investment currently stands at a
+certain book value as reported by the fund manager, how likely is it that an investor will not get this book
+value back as distributions? To calculate this risk, which we call Realisation Risk, we propose a new risk
+measure which we describe in detail in Chapter 5.
+As most of the long-term investors focus on the loss rate of their investment, our research paper
+focuses on this risk class.
+How can capital risk be reduced?
+Studies have shown that, over the long-term, internal factors are critical when building a successful
+private equity portfolio. Investors are able to minimise their capital risk significantly when diversifying
+over a large number of funds in many geographies, industries, and over many years and with different
+fund managers. In general, the best results have been achieved when funds have equal weighting with
+the same investment strategy. Apart from investing in direct funds, doing so in co-investments and
+secondary funds further increases diversification.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 11
+2.6 How to set up a risk framework of
+an investor?
+The most important question for investors is how to build up a risk model for private equity to reflect
+the risk characteristics in the asset class correctly.20
+When an institutional investor such as an insurance company or pension fund considers investing in
+private equity, their first strategic consideration is usually whether or not they can bear the funding
+and liquidity risk of investing in an asset class where they are locked-in to the investments. These
+risks are judged either by the internal asset allocation team or by the trustees who set the strategy.
+Consideration of capital and market risk lie in the hands of the private equity portfolio manager and
+are the risks to be considered by the manager in how they implement the strategic decision to be
+exposed to the asset class.
+As such, we propose first running a funding and liquidity test (FLT) which shows whether or not the
+investor is able to hold their assets to maturity, even in times when distributions are drying out and
+capital will be called (Step 1). This funding test assesses what will happen if an investor runs into the
+risk that they are not able to fund all contractual liabilities through cash and other liquid assets.21 Many
+regulated investors and trustees know that the funding and liquidity risks are important in private equity
+and therefore consider these carefully and
+
+ when distributions are drying out and
+capital will be called (Step 1). This funding test assesses what will happen if an investor runs into the
+risk that they are not able to fund all contractual liabilities through cash and other liquid assets.21 Many
+regulated investors and trustees know that the funding and liquidity risks are important in private equity
+and therefore consider these carefully and keep liquid assets (mainly cash or liquid bonds) for their open
+commitments. Many also run simulations in order to estimate how much they can allow themselves to
+invest in illiquid assets without any liquidity and funding issues.
+Step 2a: If the investor is unable to cover the funding and liquidity test (FLT) and cannot show that
+they are able to cover all open commitments through liquid assets, they run the risk of being unable to
+finance all capital calls and therefore have to sell their private equity funds on the secondary market or
+default. In this case, we assume that the investor is not able to trade with a fair arm’s length transaction
+and may have to accept a discount. This risk has to be reflected accordingly in the risk analyses.
+Step 2b: If the funding test is positive and if it shows that the investor is able to hold their private equity
+investments until maturity, then the investor should not be forced to liquidate their investment during the
+holding period.22 As such, the investor only faces long-term capital risk. As we will show in this paper,
+this long-term capital risk is much lower. Therefore, investors such as insurance companies, pension
+funds and banks with large amounts of other liquid assets can use this low risk weight.
+In addition to the long-term risk in private equity, it is also possible to calculate the interim NAV volatility
+to assess the volatility of the fair market value. However, this risk only describes the quarterly changes
+of the NAV.
+Figure 4 gives an overview of the risk and its various steps:
+Funding & Liquidity Test
+Step 1:
+(FTL)
+Market Risk –
+Negative Positive Interim NAV risk
+(short- and mid-term)
+Capital Risk
+Step 2: Liquidity Risk
+(mid- and long-term)
+Figure 4: Main risks in private equity and how to use them to build a risk framework
+In summary, with such a model, many investors would be able to show that they can fulfil the funding
+test positively and hence can focus in their risk calculation on the
+
+ and mid-term)
+Capital Risk
+Step 2: Liquidity Risk
+(mid- and long-term)
+Figure 4: Main risks in private equity and how to use them to build a risk framework
+In summary, with such a model, many investors would be able to show that they can fulfil the funding
+test positively and hence can focus in their risk calculation on the long-term capital risk which is very
+low in private equity, as can be seen in our empirical analysis.
+20 For the methodology of setting up a risk model, we use the methodology explained in the EVCA Risk Measurement Guidelines.
+21 See for a detailed description of various funding test Cornelius et al. (2013).
+22 It is important to note that investors are not forced to sell due to funding or liquidity issues. In such a case, investors are using the secondary market
+in order to restructure their portfolio strategically and are able to perform arm-length transactions. Hence, it is expected that these transactions can
+be performed at or close to the fair price.
+12 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+3. Data Description
+After describing and explaining the various risks in private equity, we
+will present a comprehensive empirical analysis showing the risks when
+investing in private equity. One of the advantages of our study is the use
+of three different high quality datasets.
+Before we describe the datasets in detail, we wish to mention that we have limited the analysis to the
+vintage years from 1990 onwards in this study. As we have already stated, diversification is the main
+tool to reduce the overall risk of investing in private equity and is followed by institutional investors
+who typically have funds in the double digits of in their portfolio. However, private equity was still in
+its infancy before 1990, and the number of funds included in each dataset is often fewer than ten.
+Consequently, these years do not represent the diversification potential that the universe of private
+equity funds offers today to investors and we therefore exclude it from the analysis.
+3.1 Pevara
+This dataset has some unique characteristics as it has a very low selection and survivorship bias in
+the data. Pevara, a subsidiary from e-front, provides cash flows provided by limited partners which
+are then subject to Pevara’s rigorous data validation process.23 This approach generates more reliable
+data than those pieced together from general partner surveys or from Freedom of
+
+vara
+This dataset has some unique characteristics as it has a very low selection and survivorship bias in
+the data. Pevara, a subsidiary from e-front, provides cash flows provided by limited partners which
+are then subject to Pevara’s rigorous data validation process.23 This approach generates more reliable
+data than those pieced together from general partner surveys or from Freedom of Information Act
+requests. It also ensures that Pevara’s benchmarks cover a wide range of strategies, geographies and
+fund sizes, as limited partners are required to benchmark all the funds in their portfolio.
+The dataset contains cash flows and net asset values of 2,170 funds for our selected time period. More
+than 70% of these funds are still active, which demonstrates that private equity is still a young asset
+class with more participants still entering the market. The majority of funds, almost 1,200, are focused
+on the US market, while 718 are from Europe. The remaining funds focus on the rest of the world,
+predominantly in Asia. 1,291 of the funds are buyout funds, while 763 are venture funds and 116 are
+mezzanine funds.
+3.2 BVCA
+The second dataset is from the BVCA. The dataset has been collected by the BVCA and is one of the
+most comprehensive datasets available for a particular market. As soon as one fund is added to the
+database it is tracked until the end of its lifetime.
+This quality of information gathering is especially important to regulators as it takes away most of the
+criticism of survivor bias in datasets. It should be noted, however, that the BVCA tracks the NAV of
+each fund only once a year, in comparison to the quarterly update from Pevara and Preqin. Hence, the
+computation of the market risk is not meaningful for this dataset.
+23 We thank Pevara very much for granting access to this data set for this risk analysis study.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 13
+One limitation with this dataset is that it is limited to funds that are managed from and located in the
+United Kingdom. This considerably limits the potential universe of funds and is why there are only
+431 funds with vintage years from 1990 onwards in this dataset. Unsurprisingly, most of these funds
+have a focus on the United Kingdom (278) in particular, or Europe in general
+
+ dataset is that it is limited to funds that are managed from and located in the
+United Kingdom. This considerably limits the potential universe of funds and is why there are only
+431 funds with vintage years from 1990 onwards in this dataset. Unsurprisingly, most of these funds
+have a focus on the United Kingdom (278) in particular, or Europe in general. Therefore, this dataset
+complements the Pevara and Preqin datasets which are focused on the US.
+3.3 Preqin
+The dataset from Preqin is collected from various sources and is one of the most widely used in the
+industry. It has been collected from LPs and GPs and is checked by Preqin.
+This dataset contains 1,640 funds for our period. As such, it has similar characteristics to the Pevara
+dataset. Preqin also has a clear bias towards active funds (1,384 funds) and buyout funds (837 buyout
+funds vs. 712 venture funds and 91 mezzanine funds). In addition, 77% of the funds are from the US,
+14% are from Europe and 9% are from the rest of the world.
+3.4 Summary of data description
+In summary, we have three different datasets to test the robustness of our results. To make the analysis
+more accessible, we have decided to focus it on the Pevara dataset in the main section and display the
+results for the other two datasets in the appendix of the report. In general, the results across the three
+different datasets are very similar.
+We chose the Pevara dataset as our main dataset because of two reasons: First, the cash flow
+information comes directly from the Limited Partners and is validated rigorously by the data provider.
+This ensures high quality of the data. Second, the number of funds is the largest and therefore offers
+a broad universe of funds to choose from for our Monte Carlo simulations later. Figure 5 shows the
+number of funds per vintage year and illustrates that Pevara has the most funds throughout our
+sample period. The relatively low number of observations in the BVCA dataset is of course a result of
+the geographical limitation of the funds. As can be seen in the figures of the appendix, this results in a
+less pronounced diversification effect for the BVCA dataset than for the other two.
+14 ///// Risk in Private Equity New insights into the risk of a portfolio of private
+
+ period. The relatively low number of observations in the BVCA dataset is of course a result of
+the geographical limitation of the funds. As can be seen in the figures of the appendix, this results in a
+less pronounced diversification effect for the BVCA dataset than for the other two.
+14 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+sdnuf
+fo
+rebmuN
+0991 2991 4991 6991 8991 0002 2002 4002 6002 8002 0102 2102
+250
+Pervara Preqin BVCA
+200
+150
+100
+50
+0
+Vintage year
+Figure 5: Number of funds per vintage year for the three different datasets.
+4. What are the real risks
+of private equity investing?
+4.1 Market risk
+The short-term market risk for private equity funds is calculated on the basis of their net asset values
+adjusted by interim cash flows. In order to assess the return, the NAV at the end of the quarter, NAV ,
+t+1
+is adjusted by all cash flows which happen during the quarter, distributions D and capital calls CC ,
+t+1 t+1
+and set in relation to the NAV at the beginning of the quarter, NAV .
+t
+Return: NAV + CC + D
+rPE = t+1 t+1 t+1 t+1
+NAV
+t
+As we calculate a time-weighted return similar to public markets, a comparison with the returns of
+the S&P 500 is possible.24 Figure 6 shows that the return volatility of private equity is lower than
+for public markets, with the exception of the dot-com bubble. This period was driven by strong
+outperformance of venture capital funds, exceptional exits and very high valuations at the height
+of the markets in 2000. This significant outperformance of more than 40% is reflected as an outlier.
+The generally lower volatility is due in part to the stale pricing effect in valuations in combination with
+the reporting lag as discussed before. For example, during the financial crisis the downturn of the
+S&P 500 was much more pronounced – as was the recovery afterwards.
+Return PE index Return S&P 500
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 15
+0991
+60%
+50%
+40
+
+ in combination with
+the reporting lag as discussed before. For example, during the financial crisis the downturn of the
+S&P 500 was much more pronounced – as was the recovery afterwards.
+Return PE index Return S&P 500
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 15
+0991
+60%
+50%
+40%
+30%
+20%
+10%
+0%
+-10%
+-20%
+-30%
+nruter
+ylretrauQ
+1991 2991 3991 4991 5991 6991 7991 8991 9991 0002 1002 2002 3002 4002 5002 6002 7002 8002 9002 0102 1102 2102 3102
+.
+Figure 6: Market risk – Changes of NAVs adjusted by cash flows of aggregated private equity
+funds compared with S&P 500. Data source: Pevara and Capital IQ.
+24 The time series for the S&P 500 was obtained from CapitalIQ. In the appendix, we also show the results for two additional indices, the Russell
+3000 and the MSCI World. These indices might be more appropriate: the Russell 3000 also includes many smaller firms that are more similar
+to the companies in which private equity funds typically invest; and the MSCI World covers listed companies around the world, which might be
+more appropriate since we are also using a global private equity index. Nevertheless, the results are very similar, driven by the large correlation
+between the three public indices.
+The most likely explanation for the smaller decline and recovery in the private equity index is that
+some fund managers were slow in adjusting their valuations for the macroeconomic shock and did
+not adjust their valuations accordingly. As such, they did not have to write them up again when the
+markets recovered.25 The correlation between the two indices is 41% in our sample. The lower
+volatility in private equity and the low correlation are both expected as private equity data is based
+on accounting figures rather than market prices, with the negative effects of stale pricing and report
+lagging mentioned before.
+Due to the similarity to public market methods, regulators and some investors prefer to use these kinds
+of analyses to determine the risk of their portfolio. However, this data series does not reflect the “real”
+risk of a private equity
+
+ private equity data is based
+on accounting figures rather than market prices, with the negative effects of stale pricing and report
+lagging mentioned before.
+Due to the similarity to public market methods, regulators and some investors prefer to use these kinds
+of analyses to determine the risk of their portfolio. However, this data series does not reflect the “real”
+risk of a private equity investor; just the change of the NAV from quarter to quarter. In our Pevara dataset,
+the expected average quarterly change is at 3.7% (median at 3.0%), while the upper quartile is at 6.1%
+and lower quartile of the observation period at 1.1%. The lowest return in the private equity index was
+only -11.4%. This is in contrast to the S&P 500, which dropped by 23% in a single quarter during the
+financial crisis In order to use the data for more advanced comparisons, adjustments to de-smooth the
+data series would be necessary. To do so, various methodologies have been suggested.26
+The conclusion of the market risk analysis is that private equity investors face a market risk which
+correlates to public markets, but that the NAV does not move to the same extent as the public markets.
+This is good news for insurance companies, banks and pension funds as private equity has a stabilising
+effect on their balance sheet. However, it is important to note that these results can paint too positive
+a picture for private equity if the time series of the private equity index is not adjusted for its limitations.
+4.2 Funding risk
+Funding risk is an important risk, particularly during market instability with a mismatch of capital calls and
+distributions for investors running an over-commitment or self-funding strategy. In the event of an equity
+market downturn as was the case in 2009, M&A activity dries out as none of the funds are willing to
+sell their investments at low market prices. As soon as signs of recovery appear, fund managers start to
+invest again at relatively low prices, which results in larger capital calls compared to distributions.
+Our analysis evaluates the likelihood of an extraordinary event subject to the diversification of the investor
+and does not take individual over-commitment strategies into account. The following analysis relies
+on a Monte Carlo simulation in which a random portfolio of private equity funds is drawn from the
+Pevara universe in each run. The number of funds in the
+
+ in larger capital calls compared to distributions.
+Our analysis evaluates the likelihood of an extraordinary event subject to the diversification of the investor
+and does not take individual over-commitment strategies into account. The following analysis relies
+on a Monte Carlo simulation in which a random portfolio of private equity funds is drawn from the
+Pevara universe in each run. The number of funds in the portfolio is varied to examine the effects of
+diversification on the outcome for an investor. For the simulations, it is assumed that the commitments in
+each randomly selected fund are of equal size. Vintage years are drawn with probabilities equal to their
+representation in the dataset. In each run, only funds within a range of three vintage years are drawn.
+This ensures that the diversification effect is not overstated by allowing investors to draw freely from
+vintage years throughout the sample period in the simulations, which is not possible for real investors.
+The following figures show the capital calls for the first five years, as well as the distributions and net
+cash flows for the first ten years of the funds’ lifetime. This implies that we have to limit the funds to those
+with vintage years before 2009 and 2004, respectively, to ensure that the funds existed long enough to
+have cash flows up to five or ten years, respectively. This results in the elimination of younger vintage
+years with a large number of funds to draw from and therefore underestimates, in our opinion, the true
+diversification potential for a private equity investor.
+We report the median case as well as the outside percentiles; being the 5th,10th, 90th, and 95th
+percentile case. Unsurprisingly, the median draw down rate for one fund, five funds or a portfolio of 20
+25 The results for the Preqin data set look very similar, as can be seen from Figure 17 in the appendix. In particular the spike during the dot-com
+bubble is present in both samples. However, the private equity index based on the Preqin data fluctuates much more in the beginning of the
+sample and shows a cyclical pattern for the first few years. This could be an indication that the accuracy of the data improved through time for the
+Preqin data set. Later on, we also find that the ranges for the Monte Carlo simulation results are typically the widest for the Preqin data set, which
+is another indication that this
+
+ the beginning of the
+sample and shows a cyclical pattern for the first few years. This could be an indication that the accuracy of the data improved through time for the
+Preqin data set. Later on, we also find that the ranges for the Monte Carlo simulation results are typically the widest for the Preqin data set, which
+is another indication that this data set includes some outliers that drive especially the extreme cases.
+26 Getmansky / Lo / Makarov (2004) and EVCA (2013) as well as Diller / Jäckel (2009).
+16 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+funds is relatively similar. However, there is a significant difference in the percentile cases. As expected,
+the distribution of outcomes narrows down for larger portfolios. Therefore, the probability of ending up
+with capital calls around the median curve increases with a well-diversified portfolio, as is evident in
+Figure 7.
+One fund selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 17
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Five funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Twenty funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+5% 10% 50% 90% 95%
+Figure 7: Funding risk – Capital call pattern (% cash flows in relation to commitment) for
+simulated portfolios of private equity funds in the 5th, 10th, median, 90th
+
+l
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+5% 10% 50% 90% 95%
+Figure 7: Funding risk – Capital call pattern (% cash flows in relation to commitment) for
+simulated portfolios of private equity funds in the 5th, 10th, median, 90th, and 95th percentile
+case. Data source: Pevara. Number of runs: 5000.
+The analysis of the behaviour of distributions for diversified portfolios demonstrates that a random
+investment in just one fund has a lower median curve than more diversified portfolios, especially in the
+earlier quarters, but higher probabilities for very large distributions. As such, the positive outliers with the
+95th percentile case are much more pronounced. On the contrary, the probability of selecting a fund
+that does not distribute any money is also non-negligible. Therefore, a random selection of one fund
+is much riskier than a diversified portfolio. Figure 8 shows that diversification over a number of funds
+helps the investor to stabilise their portfolio. The median case is developing well and is above the single
+fund case. This chart shows that the diversification effect is even more important for distributions than for
+capital calls. Diversification helps to improve the median performance by making sure to pick the positive
+outlier funds that help driving the overall performance of the private equity portfolio.
+One fund selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+18 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Five funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Twenty funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 
+
+19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Twenty funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Figure 8: Funding risk – Distribution pattern for simulated portfolios of private equity funds in
+the 5th, 10th, median, 90th, and 95th percentile case. Data source: Pevara. Number of runs:
+5000.
+However, the figure also shows that the range for the 5th and 95th percentile is much wider in the case
+of distributions than in the case of capital calls. This is not surprising: a fund manager has to deploy the
+commitments of their investors in a certain time period and doing so is not difficult. Doing so well, i.e.
+choosing the right investments, is the difficult part, which separates the good managers from the bad
+ones and this separation is visible in the distribution chart. While more than 5% of the funds in the Pevara
+universe were not able to return any money to their investors after five years, the best funds were able
+to return even more than the invested capital within this time period. It should be noted that the timing
+of the exits is also dependent on the macroeconomic situation.
+While Figure 7 and Figure 8 are based on our Monte Carlo simulation approach, Figure 9 focuses on
+the aggregated amount of capital calls and distributions per year since 2000. Here it can be seen that in
+many years the aggregated amount of capital calls outpaced the amount of distributions due to industry
+growth and market conditions. In the years 2008 and 2009 in particular, there was a large discrepancy
+between distributions and capital calls. Specifically in 2009, capital calls stayed at a very high level, while
+distributions already decreased significantly. This negative net cash flow effect was also the reason why
+
+ calls outpaced the amount of distributions due to industry
+growth and market conditions. In the years 2008 and 2009 in particular, there was a large discrepancy
+between distributions and capital calls. Specifically in 2009, capital calls stayed at a very high level, while
+distributions already decreased significantly. This negative net cash flow effect was also the reason why
+many investors ran into issues with their over-commitment or self-funding strategies.
+300
+250
+200
+150
+100
+50
+0
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 19
+nb
+DSU
+nI
+1002 2002 3002 4002 5002 6002 7002 8002 9002 0102 1102 2102 3102 4102 5102
+Total capital calls Total distributions
+Figure 9: Funding risk – Annual comparison of capital calls and distribution for aggregated
+private equity funds. Data source: Pevara.
+Therefore, we want to have a closer look at the general net cash flow pattern of private equity funds
+using our simulation approach again in order to highlight the importance of diversification over a number
+of funds. Figure 10 shows the J-curve for an investor investing in one fund, five funds, and 20 funds. The
+three charts demonstrate that the median curve for all three portfolio cases is very similar. This is also the
+risk for an investor who only looks at the normal market environment. By taking into account extreme
+scenarios and looking at portfolio compositions in which capital calls have been high and distributions
+low, the 5th percentile can provide us with new insights. An investor with one fund needs to have
+much more capital available than our 20 fund investor because of the large degree of diversification. In
+summary, the analyses in this section show that diversification substantially decreases the liquidity risk
+for an investor.
+Five funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+20 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-
+
+ 19 21 23 25 27 29 31 33 35 37 39
+20 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Twenty funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+One fund selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Figure 10: Funding risk – Net cash flow pattern for simulated portfolios of private equity funds.
+Data source: Pevara. Number of runs: 5000.
+4.3 Capital risk
+This section of the report focuses on the most important risk for an investor as it reflects the risk that
+an investor’s entire invested capital will not be paid back. In order to assess this risk, a Monte Carlo
+simulation approach similar to the one used when assessing the funding risk is used. First, we randomly
+select a vintage year. We then randomly invest in either one, five or 20 funds with vintage years that are
+in a three year range of this vintage year.
+Figure 11 displays the results of our simulation by plotting the TVPI of each portfolio composition over
+its lifetime. The results are very much in line with the previous discussions: diversification reduces the
+uncertainty of the outcome substantially. In the case of the TVPI, an investor who only selects one fund
+ends up with a TVPI of 0.4x or lower with a 5% probability. If they commit equally to five funds, the TVPI
+for the 5th percentile is increased
+
+ line with the previous discussions: diversification reduces the
+uncertainty of the outcome substantially. In the case of the TVPI, an investor who only selects one fund
+ends up with a TVPI of 0.4x or lower with a 5% probability. If they commit equally to five funds, the TVPI
+for the 5th percentile is increased significantly to 0.9x. And in the case of 20 funds, the TVPI in 95% of the
+runs in the simulation is 1.1x or higher. Even at the 1st percentile, the TVPI is just below 1x, which shows
+that it is very hard for an investor to lose money with a well-diversified portfolio.
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 21
+IPVT
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+3x
+1x
+Quarter
+IPVT
+3x
+1x
+Quarter
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+IPVT
+3x
+1x
+Quarter
+5% 10% 50% 90% 95%
+Figure 11: Capital risk – TVPI for simulated portfolios of private equity funds. Data source:
+Pevara. Number of runs: 5000.
+Figure 12 displays a different representation of this statement with a focus on the downside risk, showing
+the number of runs for which the TVPI after 40 quarters was below 1x. It is evident in our dataset that an
+investor randomly selecting one fund has a risk of losing capital in 28% of cases. A randomly selected
+portfolio of five funds results in a reduced risk of 
+
+ of this statement with a focus on the downside risk, showing
+the number of runs for which the TVPI after 40 quarters was below 1x. It is evident in our dataset that an
+investor randomly selecting one fund has a risk of losing capital in 28% of cases. A randomly selected
+portfolio of five funds results in a reduced risk of 10% of cases in which an investor would lose capital. In
+the case of a randomly selected portfolio with 20 funds, the risk for an investor is substantially reduced
+to 1.4%. This is an important finding as the risk for investors who hold a portfolio over the entire lifetime
+(or at least 10 years) is very low. This risk can be reduced further with additional funds in the portfolio and
+we have therefore added a simulation in which 50 funds are drawn randomly within three vintage years.
+In this case, the risk of ending up with a portfolio of fund that has a TVPI below 1x is virtually 0 (0.26%).
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+22 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+1
+>
+IPVT
+hcihw
+rof
+snur
+fo
+%
+Number of funds
+Figure 12: Capital risk – Cases for which the TVPI for simulated portfolios of private equity funds
+was below 1x after 10 years. Data source: Pevara. Number of runs: 5000.
+It should be noted that our analysis underestimates the true effect of diversification for an investor today.
+Since we allow vintage years to be drawn from 1990 onwards, this means that there are several years
+without many funds to choose from. For instance, there are only 77 funds in the Pevara dataset with
+vintage years 1990, 1991 and 1992. Since our simulation randomly draws funds with replacement,
+this means that funds are often drawn several times. This effect is more pronounced for the other two
+datasets. In the case of the Preqin dataset, there are only 46 funds to draw from in the first three years
+while in the BVCA dataset there are even fewer (35). Nevertheless, even in such cases, the TVPI for a
+well-diversified portfolio is above 1x for almost all runs, as the
+
+ for the other two
+datasets. In the case of the Preqin dataset, there are only 46 funds to draw from in the first three years
+while in the BVCA dataset there are even fewer (35). Nevertheless, even in such cases, the TVPI for a
+well-diversified portfolio is above 1x for almost all runs, as the results in the appendix show.
+5. What is the Realisation
+Risk for investors not
+receiving the current NAV
+as cash distributions
+over time?
+In the previous section, we analysed the risk of investing in a private
+equity portfolio and holding it over the entire time period. This is the
+risk of a typical investor who has the ability and intention to keep the
+assets throughout the entire holding period. As is evident from the
+analyses above, the risk of losing any capital with a diversified portfolio
+is very low.
+With this new analysis, we want to go one step further and extend the previous analysis. Specifically,
+we want to analyse the “Realisation Risk” of an investor at a given point in time during the lifetime of
+the portfolio. We define “Realisation Risk” as the risk of receiving a lower value of distributions by the
+end of the lifetime of the fund portfolio than the current valuation implies.27 This is a very important
+question for regulators, auditors and some institutional investors as it gives an impression of how
+realistic the valuations are and how high is the risk of not getting back the current value of the portfolio
+in cash flows. In order to do this, we calculate a ratio between all distributions which an investor will
+receive until the end of the fund’s lifetime and the current net asset value plus the capital calls which
+they have to pay going forward:
+∑T D
+RR = j = t+1 j .
+t NAV +∑T CC
+t j = t+1 j
+As the formula shows, we define the Realisation Risk RR at any given point in time t as the ratio between
+all distributions D received from t onwards until the end of the lifetime T and the sum of the current NAV
+and all capital calls CC from t onwards.
+If one does not want to limit the analysis to only liquidated funds, one has to add the residual NAV at
+time T instead:
+∑T D + NAV
+RR = j = t+1 j T .
+t NAV +∑T
+
+ until the end of the lifetime T and the sum of the current NAV
+and all capital calls CC from t onwards.
+If one does not want to limit the analysis to only liquidated funds, one has to add the residual NAV at
+time T instead:
+∑T D + NAV
+RR = j = t+1 j T .
+t NAV +∑T CC
+t j = t+1 j
+For our Monte Carlo simulations, we use this approach and set T to 40 quarters or ten years. As shown
+in Chapter 3, datasets in the private equity industry are biased towards active funds. So as not to not
+limit our analysis to so few funds, we consider this a reasonable approach, especially since the majority
+of the distributions normally occur within the first ten years of the lifetime of a fund.
+However, before we turn to the results of the Monte Carlo simulation, we show the median Realisation
+Risk for all liquidated funds in the Pevara dataset in Figure 13 for the first 32 quarters. Since these funds
+27 Alternatively, one can also interpret the “Realisation Risk” measure as the multiple an investor on the secondary market achieves by buying the fund
+at par and holding it until liquidation.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 23
+are already liquidated, their residual NAV is 0 and we can apply the first formula above. Put differently,
+there is no reliance on a residual NAV for the computation here.
+The chart shows that the Realisation Risk measure declines throughout the lifetime of a typical private
+equity fund. At the beginning of the lifetime, the ratio is around 1.5x and almost identical to the DPI of a
+liquidated fund because the NAV at the beginning is negligible in some cases or simply 0 in most cases.
+Initially, if an investor commits to a fund, there are no companies yet and therefore no NAV to report.
+Hence, the Realisation Risk measure is simply the ratio of all future distributions divided by all future
+capital calls. In the median case, an investor in a private equity fund can expect to receive 50% more
+distributions than the capital they invested.
+Over time, the fund calls money from the investor and invests in companies with it. The denominator
+in the above equations is more and more dependent on the NAV, which now represents the estimated
+fair market value of the companies
+
+ In the median case, an investor in a private equity fund can expect to receive 50% more
+distributions than the capital they invested.
+Over time, the fund calls money from the investor and invests in companies with it. The denominator
+in the above equations is more and more dependent on the NAV, which now represents the estimated
+fair market value of the companies bought by the fund managers. Eventually, when all money has
+been called, the Realisation Risk is simply the received proceeds in future quarters from selling those
+companies, divided by the NAV of all portfolio companies at a certain point in time.
+The longer the fund exists, the more value creation is already included in the current valuation and past
+distributions, which is why the ratio approaches 1x. Nevertheless, even a hypothetical investor that buys
+a fund at quarter 32 for a par price reflecting its NAV could expect that they would receive roughly 10%
+more than their investment and potential additional capital calls in the median case.
+1.50x
+1.45x
+1.40x
+1.35x
+1.30x
+1.25x
+1.20x
+1.15x
+1.10x
+1.05x
+1.00x
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31
+Quarter
+24 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+ksir
+noitazilaer
+naideM
+Figure 13: Median Realisation Risk for all liquidated funds in the Pevara dataset.
+In a next step, we run our Monte Carlo simulation. The results are shown in Figure 14. The results are
+in line with our previous findings, namely that diversification reduces the uncertainty for an investor
+substantially. While an investor who commits to a single fund often receives fewer distributions than the
+current valuation of their portfolio would imply, the same is not true for well-diversified investors. These
+can be fairly certain that they at least get their money back, as the graphs in the case of five and 20
+selected funds show.
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 
+
+. These
+can be fairly certain that they at least get their money back, as the graphs in the case of five and 20
+selected funds show.
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+Figure 14: Capital risk – Realisation Risk for simulated portfolios of private equity funds. Data
+source: Pevara. Number of runs: 5000.
+Figure 15 further supports this argument by showing how often the value of a portfolio ends up below
+its valuation after five years. If this portfolio consists of only one fund, the chances are quite high with
+a probability of roughly 28%. With a more diversified portfolio, this probability continuously falls. In the
+case of a fund portfolio of 50 funds, an investor would receive less than the valuation in quarter 20 (plus
+subsequent capital calls) in only 0.8% of runs.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 25
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Five fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Twenty fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+5% 10% 50% 90% 95%
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+26 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+1
+>
+IPVT
+hcihw
+rof
+snur
+fo
+%
+Number of funds
+Figure 15: Capital risk – Cases for which the Realisation Risk for simulated portfolios of private
+equity funds was below 1x after 5 years. Data source: Pevara. Number of runs: 5000
+
+ a portfolio of private equity funds
+1
+>
+IPVT
+hcihw
+rof
+snur
+fo
+%
+Number of funds
+Figure 15: Capital risk – Cases for which the Realisation Risk for simulated portfolios of private
+equity funds was below 1x after 5 years. Data source: Pevara. Number of runs: 5000.
+6. Conclusion
+This study discussed in detail the four major risks of private equity
+investments: funding risk, liquidity risk, market risk and capital risk. It
+also described and analysed the concept of Realisation Risk – a key risk
+specific to private equity which investors have to contend with when
+managing their private equity portfolios.
+First, we explained how private equity is different from traditional asset classes because of certain
+intrinsic characteristics unique to the asset class, such as unobservable market prices and the
+typical fund structure used by investors to gain exposure to the asset class. These characteristics
+require specific tools to quantify the risks of the asset class correctly. We then showed that a simple
+comparison of the returns of a public equity and private equity index understates the true risk of a
+private equity investment due to stale-pricing, report lagging and the fact that the NAVs are only
+reported and do not represent prices in the market. Put differently, the quarterly returns in the public
+equity index could have been achieved by buying and selling the stocks. The same is not true for
+the private equity index since investments typically have to be hold throughout the lifetime of a fund.
+Because of this illiquid nature, we next focused our attention on the funding and capital risk that are
+computed over longer periods of time. In the empirical section of our study, we demonstrated that
+diversification across funds substantially reduces the risks of private equity investments.
+This study has demonstrated the risks which an investor in private equity should focus on and how
+these risks can be evaluated and better managed. A key message of this study is that diversification is
+the main tool to reduce risk, just as is in the case of public equity. In the empirical section of our study, we
+showed that the risk of losing any capital over the entire holding period with a portfolio of just 20 funds
+is just 1.4%. This can be reduced even further to close to zero for a portfolio of 50 funds. Understanding
+this aspect of private equity is crucial in managing a private equity
+
+ public equity. In the empirical section of our study, we
+showed that the risk of losing any capital over the entire holding period with a portfolio of just 20 funds
+is just 1.4%. This can be reduced even further to close to zero for a portfolio of 50 funds. Understanding
+this aspect of private equity is crucial in managing a private equity portfolio and in framing regulation in
+relation to risk-management for investors.
+Finally, we calculated the “Realisation Risk” for private equity portfolios. An investor with a portfolio of 50
+funds has a 0.8% risk of not receiving the interim NAV or book value (after five years) of private equity
+over the remaining lifetime of the funds. These results show that private equity is far less risky than it is
+often perceived as being by those who are not actively involved in investing in this long-term asset class.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 27
+7. Appendix
+7.1 Market risk analysis with different
+public market indices and for Preqin dataset
+PE index S&P 500 Russell 3000 MSCI World
+28 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+0991
+60%
+50%
+40%
+30%
+20%
+10%
+0%
+-10%
+-20%
+-30%
+nruter
+ylretrauQ
+1991 2991 3991 4991 5991 6991 7991 8991 9991 0002 1002 2002 3002 4002 5002 6002 7002 8002 9002 0102 1102 2102 3102
+Figure 16: Market risk – Changes of NAVs adjusted by cash flows of aggregated private equity
+funds compared with S&P 500, Russell 3000 and the MSCI World. Data source: Pevara and
+Capital IQ.
+Return PE index Return S&P 500
+0991
+60%
+50%
+40%
+30%
+20%
+10%
+0%
+-10%
+-20%
+-30%
+nruter
+ylretrauQ
+1991 2991 3991 4991 5991 6991 7991 8991 9991 0002 1002 2002 3002 4002 5002
+
+%
+50%
+40%
+30%
+20%
+10%
+0%
+-10%
+-20%
+-30%
+nruter
+ylretrauQ
+1991 2991 3991 4991 5991 6991 7991 8991 9991 0002 1002 2002 3002 4002 5002 6002 7002 8002 9002 0102 1102 2102 3102
+Figure 17: Market risk – Changes of NAVs adjusted by cash flows of aggregated private equity
+funds compared with S&P 500. Data source: Preqin and Capital IQ.
+7.2 Funding risk analysis for Preqin and
+BVCA dataset
+One fund selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 29
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Five funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Twenty funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+5% 10% 50% 90% 95%
+Figure 18: Funding risk – Capital call pattern for simulated portfolios of private equity funds in
+the 5th, 10th, median, 90th, and 95th percentile case. Data source: Preqin. Number of runs:
+5000.
+Twenty funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25
+
+ in
+the 5th, 10th, median, 90th, and 95th percentile case. Data source: Preqin. Number of runs:
+5000.
+Twenty funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+5% 10% 50% 90% 95%
+30 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+One fund selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+300%
+250%
+150%
+50%
+Quarter
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Five funds selected per run
+200%
+100%
+0%
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+300%
+250%
+150%
+50%
+Quarter
+Figure 19: Funding risk – Distribution pattern for simulated portfolios of private equity funds
+in the 5th, 10th, median, 90th, and 95th percentile case. Data source: Preqin. Number of runs:
+5000.
+One fund selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 31
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Five funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23
+
+ portfolio of private equity funds ///// 31
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Five funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Twenty funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+5% 10% 50% 90% 95%
+Figure 20: Funding risk – Net cash flow pattern for simulated portfolios of private equity funds.
+Data source: Preqin. Number of runs: 5000.
+Twenty funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+Figure 21: Funding risk – Capital call pattern for simulated portfolios of private equity funds
+in the 5th, 10th, median, 90th, and 95th percentile case. Data source: BVCA. Number of runs:
+5000.
+32 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+One fund selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+Quarter
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Five funds selected per run
+100
+
+ 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+Quarter
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+Five funds selected per run
+100%
+50%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+Quarter
+One fund selected per run
+80%
+40%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+RRiisskk iinn PPrriivvaattee EEqquuiittyy NNeeww iinnssiigghhttss iinnttoo tthhee rriisskk ooff aa ppoorrttffoolliioo ooff pprriivvaattee eeqquuiittyy ffuunnddss ////////// 3333
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+120%
+100%
+60%
+20%
+Quarter
+Five funds selected per run
+80%
+40%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+120%
+100%
+60%
+20%
+Quarter
+Twenty funds selected per run
+80%
+40%
+0%
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+120%
+100%
+60%
+20%
+Quarter
+Figure 22: Funding risk – Distribution pattern for simulated portfolios of private equity funds
+in the 5th
+
+16 17 18 19 20
+5% 10% 50% 90% 95%
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+120%
+100%
+60%
+20%
+Quarter
+Figure 22: Funding risk – Distribution pattern for simulated portfolios of private equity funds
+in the 5th, 10th, median, 90th, and 95th percentile case. Data source: BVCA. Number of runs:
+5000.
+One fund selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+34 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Five funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+Twenty funds selected per run
+1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39
+swofl
+hsac
+%
+MOC
+ot
+noitaler
+ni
+200%
+150%
+100%
+50%
+0%
+-50%
+-100%
+Quarter
+5% 10% 50% 90% 95%
+Figure 23: Funding risk – Net cash flow pattern for simulated portfolios of private equity funds.
+Data source: BVCA. Number of runs: 5000.
+7.3 Capital risk analysis for Preqin and
+BVCA dataset
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+5% 10% 50%
+
+ risk analysis for Preqin and
+BVCA dataset
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+5% 10% 50% 90% 95%
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 35
+IPVT
+3x
+1x
+Quarter
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+IPVT
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+3x
+1x
+Quarter
+IPVT
+3x
+1x
+Quarter
+Figure 24: Capital risk – TVPI for simulated portfolios of private equity funds. Data source:
+Preqin. Number of runs: 5000.
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+36 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+IPVT
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+3x
+1x
+Quarter
+IPVT
+3x
+1x
+Quarter
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+IPVT
+3x
+1x
+Quarter
+5% 10% 50
+
+Quarter
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40
+IPVT
+3x
+1x
+Quarter
+5% 10% 50% 90% 95%
+Figure 25: Capital risk – TVPI for simulated portfolios of private equity funds. Data source:
+BVCA. Number of runs: 5000. Note that the NAV is only updated annually in the BVCA dataset
+which explains the cyclical pattern in particular for the first few years which are heavily
+dependent on the NAV.
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 37
+1
+>
+IPVT
+hcihw
+rof
+snur
+fo
+%
+35%
+Number of funds
+Figure 26: Capital risk – Cases for which the TVPI for simulated portfolios of private equity
+funds was below 1x after 10 years. Data source: Preqin. Number of runs: 5000.
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+1
+>
+IPVT
+hcihw
+rof
+snur
+fo
+%
+35%
+Number of funds
+Figure 27: Capital risk – Cases for which the TVPI for simulated portfolios of private equity
+funds was below 1x after 10 years. Data source: BVCA. Number of runs: 5000.
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+38 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+ksir
+noitazilaeR
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+3x
+1x
+Quarter
+5% 10% 50% 90% 95%
+ksir
+noit
+
+aeR
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+3x
+1x
+Quarter
+5% 10% 50% 90% 95%
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Figure 28: Capital risk – Realisation Risk for simulated portfolios of private equity funds. Data
+source: Preqin. Number of runs: 5000.
+One fund selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+5% 10% 50% 90% 95%
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 39
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Five funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Twenty funds selected per run
+4x
+2x
+0x
+2 4 6 8 10 12 14 16 18 20 22 24 26 28 30
+ksir
+noitazilaeR
+3x
+1x
+Quarter
+Figure 29: Capital risk – Realisation Risk for simulated portfolios of private equity funds. Data
+source: BVCA. Number of runs: 5000. Note that the NAV is only updated annually in the BVCA
+dataset which explains the cyclical pattern in particular for the first few years which are heavily
+dependent on the NAV.
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+40
+
+. Data
+source: BVCA. Number of runs: 5000. Note that the NAV is only updated annually in the BVCA
+dataset which explains the cyclical pattern in particular for the first few years which are heavily
+dependent on the NAV.
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+40 ///// Risk in Private Equity New insights into the risk of a portfolio of private equity funds
+1
+<
+RR
+hcihw
+rof
+snur
+fo
+%
+40%
+35%
+Number of funds
+Figure 30: Capital risk – Cases for which the Realisation Risk for simulated portfolios of private
+equity funds was below 1x after 5 years. Data source: Preqin. Number of runs: 5000.
+30%
+25%
+20%
+15%
+10%
+5%
+0%
+1 5 20 50
+Number of funds
+1
+<
+RR
+hcihw
+rof
+snur
+fo
+%
+40%
+35%
+Figure 31: Capital risk – Cases for which the Realisation Risk for simulated portfolios of private
+equity funds was below 1x after 5 years. Data source: BVCA. Number of runs: 5000.
+8. Bibliography
+BIS (2008). Principles for Sound Liquidity Risk Management and Supervision. Basel Committee on
+Banking Supervision.
+Barber, B. & Yasuda, A. (2014). Interim Fund Performance and Fundraising in Private Equity (August 29,
+2014). Available at http://papers.ssrn.com/sol3/papers.cfm?abstract_id=2357570
+Buchner, A. (2014). Risk Management for Private Equity Funds (September 18, 2014). Available at
+SSRN: http://ssrn.com/abstract=2549664 or http://dx.doi.org/10.2139/ssrn.2549664
+Chakravarty, N. & Diller, C. (2013). Calibration of Risk and Correlation in Private Equity. EVCA Research
+Paper.
+Cogent (2015): Secondary Market Trends & Outlook, January 2015.
+Cornelius, P. (2011). International Investments in Private Equity. Wiley.
+Cornelius, P., Diller, C., Guennoc, D. & Meyer, T.
+
+3). Calibration of Risk and Correlation in Private Equity. EVCA Research
+Paper.
+Cogent (2015): Secondary Market Trends & Outlook, January 2015.
+Cornelius, P. (2011). International Investments in Private Equity. Wiley.
+Cornelius, P., Diller, C., Guennoc, D. & Meyer, T. (2013). Mastering Illiquidity. Wiley.
+Diller, C. & Jäckel, C. (2010). Asset Allocation and Exposure Management. In K. Lichtner (Ed.), Risk
+Management in Private Equity, Private Equity International.
+Diller, C. & Kaserer, C. (2009). What Drives Private Equity Returns? – Fund Inflows, Skilled GPs, and/or
+Risk? European Financial Management, 15(3), 643–675.
+Diller, C. & Wulff, M. (2012). The private equity performance puzzle. In Montana Capital Partners
+(Ed.), Performance Measurement and Benchmarking in Private Equity, (pp- 19-28), Private Equity
+International.
+Diller, C. & Wulff, M. (2013): Valuation Dynamics in Secondaries. In The Private Equity Secondaries
+Market (Second Edition), Private Equity International.
+Driessen, J., Lin, T.-C. & Phalippou, L. (2007). Estimating the Performance and Risk Exposure of Private
+Equity Funds: A New Methodology. EFA Working Paper.
+Emery, K. M. (2003). Private Equity Risk and Reward: Assessing the Stale Pricing Problem. Journal of
+Private Equity, 6(2), 43-50.
+EVCA Risk Measurement Guidelines (2013). www.evca.eu
+Getmansky, M., Lo, A. W. & Makarov, I. (2004). An econometric model of serial correlation and illiquidity
+in hedge fund returns. Journal of Financial Economics, 74, 529-609.
+Gottschalg, O. (2007). Performance Assessment: What We Know and What We Don’t Know. Private
+Equity International.
+Jenkinson, T., Sousa M. & Stucke, R. (2013). How Fair are the Valuations of Private Equity Funds?
+(February 2013).
+Kaserer, C
+
+609.
+Gottschalg, O. (2007). Performance Assessment: What We Know and What We Don’t Know. Private
+Equity International.
+Jenkinson, T., Sousa M. & Stucke, R. (2013). How Fair are the Valuations of Private Equity Funds?
+(February 2013).
+Kaserer, C., Wagner, N. & Achleitner, A.-K. (2003). Managing Investment Risks of Institutional Private
+Equity, Investors: The Challenge of Illiquidity. In M. Frenkel, U. Hommel & M. Rudolf (Eds.), Risk
+Management, (pp. 259-277). Heidelberg: Springer.
+Mathonet, P.-Y. & Meyer, T. (2005). J-Curve Exposure: Managing a Portfolio of Venture Capital and
+Private Equity Funds. Chichester: John Wiley & Sons.
+Mathonet, P.-Y. & Weidig, T. (2004). The Risk Profiles of Private Equity. Working Paper.
+PEI (2014): Smart money: How family offices and foundations work the private equity cycle. Survey from
+Montana Capital Partners and Private Equity International.
+Risk in Private Equity New insights into the risk of a portfolio of private equity funds ///// 41
+British Private Equity & Venture Capital Association
+5th Floor East, Chancery House, 53–64 Chancery Lane, London WC2A 1QS
+T +44 (0)20 7492 0400 bvca@bvca.co.uk www.bvca.co.uk
+4422 ////////// RRiisskk iinn PPrriivvaattee EEqquuiittyy NNeeww iinnssiigghhttss iinnttoo tthhee rriisskk ooff aa ppoorrttffoolliioo ooff pprriivvaattee eeqquuiittyy ffuunnddss
