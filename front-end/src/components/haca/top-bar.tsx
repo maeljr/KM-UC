@@ -4,12 +4,12 @@ import {
   ArrowRight,
   Bell,
   CircleAlert,
+  FileText,
   Info,
   LayoutDashboard,
   Library,
   ScrollText,
 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +41,8 @@ function HacaLogo() {
 const navItems = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
   { label: "Knowledge Repository", to: "/repository", icon: Library },
+  { label: "RegWatch", to: "/regwatch", icon: Bell },
+  { label: "Génération", to: "/generation", icon: FileText },
   { label: "Audit Logs", to: "/audit", icon: ScrollText },
 ] as const;
 

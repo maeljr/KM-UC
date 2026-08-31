@@ -92,7 +92,7 @@ function RegWatchAgent() {
         const mapped: Alert[] = data.map((item, index) => ({
           id: `reg-${index}`,
           category: item.source || "RegWatch",
-          severity: "info",
+          severity: item.is_alert ? "action" : "info",
           title: item.title?.split("\n")[0] || "Alerte",
           summary: item.title?.slice(0, 300) || "",
           date: item.date || "",

@@ -16,7 +16,10 @@ import numpy as np
 import time
 import threading
 from rank_bm25 import BM25Okapi
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from azure_search import ask_azure, search_azure
+
 
 # Credential Azure réutilisable (évite le Device Code à chaque appel)
 _azure_credential = None
@@ -608,6 +611,7 @@ class AzureQuestion(BaseModel):
     business_line: str = None
     library: str = None
     history: list = []
+    detail: str = "concise"  # "concise" ou "detailed"
 
 @app.post("/ask-azure")
 def ask_azure_endpoint(question: AzureQuestion):
@@ -620,7 +624,7 @@ def ask_azure_endpoint(question: AzureQuestion):
             lib_filter = f"library eq '{question.library}'"
             filter_expr = filter_expr + " and " + lib_filter if filter_expr else lib_filter
         
-        result = ask_azure(question.query, top=question.top, filter_expr=filter_expr, history=question.history)
+        result = ask_azure(question.query, top=question.top, filter_expr=filter_expr, history=question.history, detail=question.detail)
         return result
     except Exception as e:
         import traceback
@@ -825,6 +829,51 @@ if new_docs:
     print("Indexation terminée.")
 else:
     print("Aucun nouveau document à indexer.")
+
+@app.post("/repository")
+def repository_endpoint(request: dict = None):
+    """Liste les documents dédupliqués depuis Azure AI Search."""
+    try:
+        import requests as req
+        from azure_search import SEARCH_ENDPOINT, SEARCH_INDEX, SEARCH_API_KEY, SEARCH_API_VERSION
+        
+        url = f"{SEARCH_ENDPOINT}/indexes/{SEARCH_INDEX}/docs/search?api-version={SEARCH_API_VERSION}"
+        headers = {"Content-Type": "application/json", "api-key": SEARCH_API_KEY}
+        
+        body = {
+            "search": "*",
+            "top": 1000,
+            "select": "parentId,name,url,library,documentType,businessLine,primaryTopic",
+            "orderby": "name asc"
+        }
+        
+        r = req.post(url, headers=headers, json=body, timeout=30)
+        if r.status_code != 200:
+            raise HTTPException(status_code=500, detail=f"Azure AI Search error: {r.status_code}")
+        
+        data = r.json()
+        results = data.get("value", [])
+        
+        # Dédupliquer par parentId
+        seen = set()
+        unique_docs = []
+        for item in results:
+            parent_id = item.get("parentId")
+            if parent_id and parent_id not in seen:
+                seen.add(parent_id)
+                unique_docs.append({
+                    "parentId": parent_id,
+                    "name": item.get("name", "Sans titre"),
+                    "url": item.get("url", ""),
+                    "library": item.get("library", ""),
+                    "documentType": item.get("documentType", ""),
+                    "businessLine": item.get("businessLine", ""),
+                    "primaryTopic": item.get("primaryTopic", ""),
+                })
+        
+        return {"value": unique_docs, "count": len(unique_docs)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

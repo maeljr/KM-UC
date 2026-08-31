@@ -1,5 +1,7 @@
 import React, { useRef, useState } from "react";
+import { useUser } from "@/hooks/useUser";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { addAuditLog } from "@/lib/audit-log";
 import {
   ArrowRight,
   ChevronDown,
@@ -102,7 +104,7 @@ const t = (lang: "fr" | "en") => ({
 
 // ========== HELPER : ENRICHISSEMENT DES SOURCES ==========
 const enrichSourceData = (
-  src: { source: string; chunk_index: number; snippet?: string; score?: number; section?: string },
+  src: { source: string; chunk_index?: number; snippet?: string; score?: number; section?: string },
   index: number,
   globalScore: number,
   lang: "fr" | "en" = "fr"
@@ -132,17 +134,17 @@ const enrichSourceData = (
     const matchedKey = Object.keys(realisticSnippets).find((key) => src.source.toLowerCase().includes(key.toLowerCase()));
     if (matchedKey) {
       const list = realisticSnippets[matchedKey];
-      snippet = list[src.chunk_index % list.length];
+      snippet = list[(src.chunk_index ?? 0) % list.length];
     } else {
-      snippet = `Extrait de la section ${src.chunk_index + 1} du document ${src.source} (Spécifications techniques et exigences réglementaires).`;
+      snippet = `Extrait de la section ${(src.chunk_index ?? 0) + 1} du document ${src.source} (Spécifications techniques et exigences réglementaires).`;
     }
   }
 
   if (lang === "en" && !src.snippet) {
-    snippet = `Regulatory excerpt from section ${src.chunk_index + 1} of document ${src.source}.`;
+    snippet = `Regulatory excerpt from section ${(src.chunk_index ?? 0) + 1} of document ${src.source}.`;
   }
 
-  const section = src.section || `Chunk ${src.chunk_index}`;
+  const section = src.section || `Chunk ${src.chunk_index ?? 0}`;
 
   return { confidence: computedConfidence, snippet, section };
 };
@@ -170,43 +172,120 @@ function TypewriterText({ text, speed = 15 }: { text: string; speed?: number }) 
 function FormattedAnswer({ text }: { text: string }) {
   if (!text) return null;
 
-  const lines = text.split("\n").filter((line) => line.trim().length > 0);
-  let listCounter = 0;
+  const renderMarkdown = (line: string): React.ReactNode => {
+    const parts: React.ReactNode[] = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+    
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+      parts.push(<strong key={key++} className="font-semibold text-slate-900">{match[1]}</strong>);
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
+    }
+    return parts;
+  };
 
+  const lines = text.split("\n").filter((line) => line.trim().length > 0);
   const sourceRegex = /\[Source\s*:\s*([^\]]+)\]/gi;
 
   return (
-    <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+    <div className="space-y-2 text-slate-700 text-sm leading-relaxed">
       {lines.map((line, idx) => {
-        const isListItem = line.trim().startsWith("-") || line.trim().startsWith("*");
-        if (isListItem) listCounter++;
-
-        const cleanLine = isListItem ? line.trim().replace(/^[-*]\s*/, "") : line;
-        const matches = [...cleanLine.matchAll(sourceRegex)];
+        const trimmed = line.trim();
+        const isSubItem = /^\s{2,}[-*]/.test(line);
+        const isMainItem = /^[-*]/.test(trimmed);
+        const isNumbered = /^\d+\.\s*/.test(trimmed);
+        
+        const matches = [...trimmed.matchAll(sourceRegex)];
         const uniqueSourcesInLine = Array.from(new Set(matches.map(m => m[1].trim())));
-        const textWithoutSourceTags = cleanLine.replace(sourceRegex, "").trim();
-
-        return (
-          <div key={idx} className="flex items-start gap-3">
-            {isListItem && (
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-semibold text-xs mt-0.5">
-                {listCounter}
-              </span>
-            )}
-            <div className="flex-1">
-              <span>{textWithoutSourceTags}</span>
-              {uniqueSourcesInLine.map((sourceName, sIdx) => (
-                <Badge
-                  key={sIdx}
-                  variant="outline"
-                  className="ml-2 inline-flex items-center gap-1 bg-slate-50 text-slate-600 border-slate-300 font-normal text-xs py-0 px-2"
-                >
-                  <FileText className="h-3 w-3 text-slate-400" />
-                  {sourceName.replace(".pdf", "")}
-                </Badge>
-              ))}
+        const textWithoutSourceTags = trimmed.replace(sourceRegex, "").trim();
+        
+        if (isSubItem) {
+          return (
+            <div key={idx} className="flex items-start gap-3 pl-8">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" />
+              <div className="flex-1">
+                <span>{renderMarkdown(textWithoutSourceTags)}</span>
+                {uniqueSourcesInLine.map((sourceName, sIdx) => (
+                  <Badge
+                    key={sIdx}
+                    variant="outline"
+                    className="ml-2 inline-flex items-center gap-1 bg-slate-50 text-slate-600 border-slate-300 font-normal text-xs py-0 px-2"
+                  >
+                    <FileText className="h-3 w-3 text-slate-400" />
+                    {sourceName.replace(".pdf", "")}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          );
+        }
+        
+        if (isMainItem) {
+          return (
+            <div key={idx} className="flex items-start gap-3">
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+              <div className="flex-1">
+                <span>{renderMarkdown(textWithoutSourceTags)}</span>
+                {uniqueSourcesInLine.map((sourceName, sIdx) => (
+                  <Badge
+                    key={sIdx}
+                    variant="outline"
+                    className="ml-2 inline-flex items-center gap-1 bg-slate-50 text-slate-600 border-slate-300 font-normal text-xs py-0 px-2"
+                  >
+                    <FileText className="h-3 w-3 text-slate-400" />
+                    {sourceName.replace(".pdf", "")}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        if (isNumbered) {
+          return (
+            <div key={idx} className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-semibold text-xs mt-0.5">
+                {trimmed.split(".")[0]}
+              </span>
+              <div className="flex-1">
+                <span>{renderMarkdown(textWithoutSourceTags)}</span>
+                {uniqueSourcesInLine.map((sourceName, sIdx) => (
+                  <Badge
+                    key={sIdx}
+                    variant="outline"
+                    className="ml-2 inline-flex items-center gap-1 bg-slate-50 text-slate-600 border-slate-300 font-normal text-xs py-0 px-2"
+                  >
+                    <FileText className="h-3 w-3 text-slate-400" />
+                    {sourceName.replace(".pdf", "")}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <p key={idx} className="text-slate-700">
+            {renderMarkdown(textWithoutSourceTags)}
+            {uniqueSourcesInLine.map((sourceName, sIdx) => (
+              <Badge
+                key={sIdx}
+                variant="outline"
+                className="ml-2 inline-flex items-center gap-1 bg-slate-50 text-slate-600 border-slate-300 font-normal text-xs py-0 px-2"
+              >
+                <FileText className="h-3 w-3 text-slate-400" />
+                {sourceName.replace(".pdf", "")}
+              </Badge>
+            ))}
+          </p>
         );
       })}
     </div>
@@ -216,11 +295,14 @@ function FormattedAnswer({ text }: { text: string }) {
 
 function KnowledgeAssistant() {
   const [lang, setLang] = useState<"fr" | "en">("fr");
+  const { user } = useUser();
+  const currentUser = user?.userDetails || "Utilisateur";
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(true);
   const [votes, setVotes] = useState<Record<string, "up" | "down" | null>>({});
   const [attachment, setAttachment] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [deliverableOpen, setDeliverableOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedText, setGeneratedText] = useState("");
@@ -228,6 +310,7 @@ function KnowledgeAssistant() {
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [followUp, setFollowUp] = useState("");
+  const [detailMode, setDetailMode] = useState(false);
 
   type ChatMessage = {
     role: "user" | "assistant";
@@ -245,9 +328,17 @@ function KnowledgeAssistant() {
     setDeliverable("");
     setQuery("");
     setFollowUp("");
+    setIsSearching(false);
+    setIsTyping(false);
+    setTypingText("");
+    setAttachment(null);
     localStorage.removeItem("haca-last-response");
     localStorage.removeItem("haca-last-query");
     localStorage.removeItem("haca-chat-history");
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
   // Restaurer la dernière réponse au chargement
@@ -256,8 +347,19 @@ function KnowledgeAssistant() {
       const saved = localStorage.getItem("haca-last-response");
       const savedQuery = localStorage.getItem("haca-last-query");
       const savedHistory = localStorage.getItem("haca-chat-history");
+      
       if (savedHistory) {
-        setChatHistory(JSON.parse(savedHistory));
+        const history = JSON.parse(savedHistory);
+        setChatHistory(history);
+        // Restaurer ragResponse à partir du dernier message assistant
+        const lastAssistant = [...history].reverse().find((m: ChatMessage) => m.role === "assistant");
+        if (lastAssistant?.sources) {
+          setRagResponse({
+            answer: lastAssistant.content,
+            sources: lastAssistant.sources,
+            confidence_score: 0,
+          });
+        }
       } else if (saved) {
         const data: RagResponse = JSON.parse(saved);
         setRagResponse(data);
@@ -293,8 +395,15 @@ function KnowledgeAssistant() {
 
   const tr = t(lang);
 
-  const vote = (id: string, dir: "up" | "down") =>
+  const vote = (id: string, dir: "up" | "down") => {
     setVotes((prev) => ({ ...prev, [id]: prev[id] === dir ? null : dir }));
+    addAuditLog({
+        user: currentUser,
+      action: "validate_source",
+      detail: `Source ${id} marquée ${dir === "up" ? "pertinente" : "non pertinente"}`,
+      tag: "Feedback",
+    });
+  };
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
@@ -317,27 +426,43 @@ function KnowledgeAssistant() {
   // ======= CONNEXION AU RAG =======
   const handleSearch = async () => {
     if (!query.trim() || isSearching) return;
+    
+    // Rendu optimiste : ajouter le message utilisateur immédiatement
+    const userQuery = query.trim();
+    setChatHistory(prev => [...prev, { role: "user" as const, content: userQuery }]);
+    setQuery(""); // Vider le champ immédiatement
     setIsSearching(true);
+    
     try {
       const response = await fetch("/api/ask-azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, lang }),
+        body: JSON.stringify({ query: userQuery, lang, detail: detailMode ? "detailed" : "concise" }),
       });
       const data: RagResponse = await response.json();
       setIsTyping(true);
       setChatHistory(prev => {
-        const updated = [...prev, { role: "user", content: query }, { role: "assistant", content: data.answer, sources: data.sources }];
+        const updated: ChatMessage[] = [
+          ...prev,
+          { role: "assistant" as const, content: data.answer, sources: data.sources },
+        ];
         localStorage.setItem("haca-chat-history", JSON.stringify(updated));
         return updated;
       });
-      setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
       setRagResponse(data);
       setGeneratedText(data.answer);
       setDeliverable(data.answer);
       setFollowUp("");
       localStorage.setItem("haca-last-response", JSON.stringify(data));
-      localStorage.setItem("haca-last-query", query);
+      localStorage.setItem("haca-last-query", userQuery);
+      addAuditLog({
+        user: currentUser,
+        action: "search",
+        detail: `${userQuery} → ${data.answer.slice(0, 80)}...`,
+        tag: "Query",
+      });
     } catch (error) {
       console.error("Erreur recherche:", error);
       setGeneratedText("Désolé, une erreur est survenue.");
@@ -348,22 +473,33 @@ function KnowledgeAssistant() {
 
   const handleFollowUp = async () => {
     if (!followUp.trim() || isSearching) return;
+    
+    // Rendu optimiste : ajouter le message utilisateur immédiatement
+    const userFollowUp = followUp.trim();
+    setChatHistory(prev => [...prev, { role: "user" as const, content: userFollowUp }]);
+    setFollowUp(""); // Vider le champ immédiatement
     setIsSearching(true);
+    
     try {
-      const history = [
-        { role: "user", content: query },
-        { role: "assistant", content: generatedText || ragResponse?.answer || "" },
-      ];
+      // Inclure TOUS les messages, y compris le dernier ajouté
+      const history = chatHistory.map(msg => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+      history.push({ role: "user" as const, content: userFollowUp });
 
       const response = await fetch("/api/ask-azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: followUp, lang, history }),
+        body: JSON.stringify({ query: userFollowUp, lang, history, detail: detailMode ? "detailed" : "concise" }),
       });
       const data: RagResponse = await response.json();
       setIsTyping(true);
       setChatHistory(prev => {
-        const updated = [...prev, { role: "user", content: followUp }, { role: "assistant", content: data.answer, sources: data.sources }];
+        const updated: ChatMessage[] = [
+          ...prev,
+          { role: "assistant" as const, content: data.answer, sources: data.sources },
+        ];
         localStorage.setItem("haca-chat-history", JSON.stringify(updated));
         return updated;
       });
@@ -371,7 +507,12 @@ function KnowledgeAssistant() {
       setRagResponse(data);
       setGeneratedText(data.answer);
       setDeliverable(data.answer);
-      setFollowUp("");
+      addAuditLog({
+        user: currentUser,
+        action: "search",
+        detail: `${userFollowUp} → ${data.answer.slice(0, 80)}...`,
+        tag: "Follow-up",
+      });
     } catch (error) {
       console.error("Erreur follow-up:", error);
     } finally {
@@ -483,6 +624,29 @@ function KnowledgeAssistant() {
               </button>
             ))}
           </div>
+
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setDetailMode(!detailMode)}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                detailMode
+                  ? "border-primary/40 bg-accent text-accent-foreground"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {detailMode ? (
+                <>
+                  <FileText className="h-3 w-3" />
+                  Réponse détaillée
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3 w-3" />
+                  Réponse concise
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* ========== RÉPONSE RAG + SOURCES ========== */}
@@ -542,6 +706,8 @@ function KnowledgeAssistant() {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Loader inséré dans le fil de discussion */}
                   {isSearching && (
                     <div className="flex justify-start">
                       <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-secondary text-foreground">

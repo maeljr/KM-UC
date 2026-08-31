@@ -166,7 +166,7 @@ def _build_context(passages: list):
     return "\n\n---\n\n".join(morceaux), retenus
 
 
-def generate_answer(question: str, passages: list, history: list = None):
+def generate_answer(question: str, passages: list, history: list = None, detail: str = "concise"):
     """Génère une réponse à partir des passages Azure AI Search."""
     if not passages:
         return {
@@ -201,12 +201,18 @@ def generate_answer(question: str, passages: list, history: list = None):
             history_text += f"{role} : {msg.get('content', '')}\n"
     
     url = f"{AZURE_AI_ENDPOINT}/openai/deployments/{CHAT_DEPLOYMENT}/chat/completions?api-version={API_VERSION}"
+        # Ajuster le prompt selon le mode
+    if detail == "concise":
+        instruction_detail = "Sois SYNTHÉTIQUE : maximum 5 puces ou points essentiels. Va directement à l'essentiel."
+    else:
+        instruction_detail = "Sois COMPLET et DÉTAILLÉ : développe chaque point en profondeur."
+    
     corps = {
         "temperature": 0.0,
-        "max_completion_tokens": 2500,
+        "max_completion_tokens": 1500 if detail == "concise" else 2500,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Historique de la conversation :\n{history_text}\n\nExtraits de la base documentaire :\n\n{contexte}\n\nQuestion : {question}"},
+            {"role": "user", "content": f"Historique de la conversation :\n{history_text}\n\nExtraits de la base documentaire :\n\n{contexte}\n\n{instruction_detail}\n\nQuestion : {question}"},
         ],
     }
     
@@ -258,18 +264,30 @@ def generate_answer(question: str, passages: list, history: list = None):
         })
     
     # Score de confiance basé sur le reranker moyen des passages cités
+        # Score de confiance recalibré selon l'échelle du reranker Azure
     if cites:
         reranker_scores = [retenus[n-1].get("reranker") or 0 for n in cites]
         avg_reranker = sum(reranker_scores) / len(reranker_scores)
-        confidence_score = min(95, max(5, int(avg_reranker * 20)))
+        if avg_reranker >= 3.5:
+            confidence_score = 90
+        elif avg_reranker >= 3.0:
+            confidence_score = 80
+        elif avg_reranker >= 2.5:
+            confidence_score = 65
+        elif avg_reranker >= 2.0:
+            confidence_score = 50
+        elif avg_reranker >= 1.5:
+            confidence_score = 35
+        else:
+            confidence_score = 20
     else:
         confidence_score = 5
     
-    if confidence_score >= 70:
+    if confidence_score >= 80:
         confidence = "élevée"
-    elif confidence_score >= 45:
+    elif confidence_score >= 65:
         confidence = "moyenne"
-    elif confidence_score >= 25:
+    elif confidence_score >= 40:
         confidence = "faible"
     else:
         confidence = "très faible"
@@ -283,6 +301,6 @@ def generate_answer(question: str, passages: list, history: list = None):
         "cited": cites,
     }
 
-def ask_azure(question: str, top: int = TOP_K, filter_expr: str = None, history: list = None) -> dict:
+def ask_azure(question: str, top: int = TOP_K, filter_expr: str = None, history: list = None, detail: str = "concise") -> dict:
     passages = search_azure(question, top=top, filter_expr=filter_expr)
-    return generate_answer(question, passages, history=history)
+    return generate_answer(question, passages, history=history, detail=detail)

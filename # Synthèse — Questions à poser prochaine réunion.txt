@@ -1,0 +1,110 @@
+# Synthèse — Questions à poser aux experts métier
+
+## Prochaine réunion
+
+---
+
+## 1. Mode de réponse
+
+**Contexte** : Les réponses du RAG sont actuellement paramétrables (concise/détaillée), mais même en mode "concise", elles restent longues.
+
+**Question** :
+> La longueur actuelle des réponses vous convient-elle ? Ou faut-il un mode encore plus synthétique (ex: 3 puces max) ?
+
+---
+
+## 2. Knowledge Repository
+
+**Contexte** : La page existe mais est vide. On doit décider de son contenu.
+
+**Questions** :
+1. Faut-il afficher **tous les documents** des business lines (Consulting, RC, haca-demy) ?
+2. Quel niveau de détail ? Simple liste de noms, ou fiches avec métadonnées (type, businessLine, date) ?
+3. Faut-il un **moteur de recherche** dans le repository ?
+4. Les utilisateurs doivent-ils pouvoir **ouvrir le document SharePoint** depuis le repository ?
+5. Faut-il des **filtres** (par business line, type, date) ?
+
+---
+
+## 3. Édition de messages
+
+**Contexte** : On envisage d'ajouter la possibilité d'éditer un message déjà envoyé.
+
+**Questions** :
+1. L'édition doit-elle être **illimitée** (branches infinies) ou **limitée** (une seule fois) ?
+2. Faut-il **conserver la trace** de l'ancienne version ?
+3. Préférez-vous un système de **sauvegarde de conversation** avant de recommencer (plutôt que l'édition) ?
+
+---
+
+## 4. Conversations sauvegardées
+
+**Contexte** : On propose d'ajouter un espace où l'utilisateur archive ses conversations avant d'en démarrer une nouvelle.
+
+**Questions** :
+1. Le **nommage** doit-il être obligatoire ou optionnel ?
+2. Où afficher les conversations sauvegardées : **modal** (popup) ou **page dédiée** ?
+3. Les conversations sauvegardées doivent-elles être **consultables en lecture seule** ou modifiables ?
+
+---
+
+## 5. RegWatch
+
+**Contexte** : La page RegWatch affiche les alertes du scraper. Actuellement, seuls 5 articles remontent (35 sources bloquées).
+
+**Questions** :
+1. Quels sont les **organismes prioritaires** à surveiller ? (CSSF, ESMA, EBA, etc.)
+2. Le filtrage actuel (Action Required Only) est-il suffisant ?
+3. Faut-il ajouter des **filtres par framework** (DORA, AML/CFT, etc.) ?
+4. La fréquence de mise à jour : **quotidienne** est-elle suffisante ?
+
+---
+
+## 6. Audit Logs
+
+**Contexte** : La page Audit Logs existe mais n'est pas développée.
+
+**Questions** :
+1. Quelles **actions** doivent être tracées ? (questions posées, documents générés, connexions)
+2. Quel **niveau de détail** ? (texte complet, métadonnées, horodatage)
+3. Qui peut **consulter** les logs ? (tous les utilisateurs, managers uniquement)
+4. Faut-il pouvoir **exporter** les logs ?
+
+---
+
+## 7. Déploiement
+
+**Contexte** : L'IT a été sollicitée pour un déploiement de test sur Static Web Apps.
+
+**Questions** :
+1. Les **Azure Functions** sont-elles disponibles pour les backends ?
+2. Quel **stockage** pour les bibliothèques (95 Mo de CV) ?
+3. L'**authentification Azure AD** est-elle déjà configurée pour SWA ?
+4. Quelle **région** pour le déploiement test ?
+
+---
+
+## 8. Génération de documents
+
+**Contexte** : La page Génération fonctionne, mais le service de génération est en cours de finalisation.
+
+**Questions** :
+1. Les **bibliothèques de contenu** (CV, clauses, formations) sont-elles à jour dans OneDrive ?
+2. Faut-il valider les **clauses juridiques** avec le service juridique avant mise en production ?
+3. Le **processus d'approbation** des documents générés doit-il être tracé ? (qui a généré quoi, quand)
+
+---
+
+## Ce que je recommande de prioriser
+
+| Priorité | Sujet | Raison |
+|----------|-------|--------|
+| 🔴 Haute | Knowledge Repository | Impact direct sur l'utilité de l'outil |
+| 🔴 Haute | Édition de messages / sauvegarde | UX critique pour l'usage quotidien |
+| 🟡 Moyenne | RegWatch | Le scraper doit être fiabilisé |
+| 🟡 Moyenne | Audit Logs | Obligation réglementaire probable |
+| 🟢 Basse | Déploiement | L'IT est déjà sollicitée |
+
+---
+
+C'est une synthèse complète. Tu veux que je la mette en forme dans un document à envoyer aux experts avant la réunion ?

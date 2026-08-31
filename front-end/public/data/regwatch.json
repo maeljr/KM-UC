@@ -1,8 +1,75 @@
 [
   {
-    "title": "ESMA confirms go-live for weekly commodity derivatives position reporting\n\n 14/08/2026\n\nThe European Securities and Markets Authority (ESMA), the EU’s financial markets regulator",
-    "link": "https://www.esma.europa.eu/press-news/esma-news/esma-confirms-go-live-weekly-commodity-derivatives-position-reporting",
-    "date": "14/08/2026",
-    "source": "ESMA"
+    "title": "Nouvelle option pour la Sproochmaschinn date de publication 26.08.2026 Nouvelle option pour la Sproochmaschinn : normalisation des transcriptions La Sproochmaschinn – plus précisément la Schreifmaschinn, l’outil de reconnaissance vocale qui permet de convertir la langue parlée en texte – propose désormais une nouvelle option : la normalisation des transcriptions....",
+    "source": "Gouvernement Luxembourg",
+    "date": "2026-08-26",
+    "link": "https://gouvernement.lu/fr/actualites.gouv2024_zls%2Bfr%2Bactualites%2B2026%2Bnei-optioun-sproochmaschinn-normaliseierung-transkriptiounen.html",
+    "frameworks": [
+      "Solvency II"
+    ],
+    "regulation_type": "",
+    "sectors": [
+      "IFM"
+    ],
+    "scope": "Luxembourg Government - press releases, policy updates, and government decisions",
+    "priority_tier": 4,
+    "priority_label": "Informational",
+    "is_alert": false
+  },
+  {
+    "title": "\"Europas Zukunftsfähigkeit stärken\": Gilles Roth beim Treffen der deutschsprachigen Finanzministerinnen und Finanzminister in Liechtenstein date de publication 25.08.2026 Finanzminister Gilles Roth hat am 24. August 2026 am Treffen der deutschsprachigen Finanzministerinnen und Finanzminister im Fürstentum Liechtenstein teilgenommen.",
+    "source": "Gouvernement Luxembourg",
+    "date": "2026-08-25",
+    "link": "https://gouvernement.lu/fr/actualites.gouvernement2024%2Bde%2Bactualites%2Btoutes_actualites%2Bcommuniques%2B2026%2B08-aout%2B25-roth-liechtenstein.html",
+    "frameworks": [],
+    "regulation_type": "",
+    "sectors": [],
+    "scope": "Luxembourg Government - press releases, policy updates, and government decisions",
+    "priority_tier": 4,
+    "priority_label": "Informational",
+    "is_alert": false
+  },
+  {
+    "title": "\"Wir können es uns nicht leisten, nicht mit den Taliban zu sprechen\" date de publication 25.08.2026 Interview mit Léon Gloden im Luxemburger Wort",
+    "source": "Gouvernement Luxembourg",
+    "date": "2026-08-25",
+    "link": "https://gouvernement.lu/fr/actualites.gouvernement2024%2Bde%2Bactualites%2Btoutes_actualites%2Binterviews%2B2026%2B08-aout%2B25-gloden-wort.html",
+    "frameworks": [],
+    "regulation_type": "Interview",
+    "sectors": [],
+    "scope": "Luxembourg Government - press releases, policy updates, and government decisions",
+    "priority_tier": 4,
+    "priority_label": "Informational",
+    "is_alert": false
+  },
+  {
+    "title": "EU Commission request for EIOPA's technical advice on the content of Delegated acts under the IDD in the context of the Retail Investment Strategy (RIS)",
+    "source": "EIOPA",
+    "date": "2026-08-24",
+    "link": "https://www.eiopa.europa.eu/publications/eu-commission-request-eiopas-technical-advice-content-delegated-acts-under-idd-context-retail_en",
+    "frameworks": [],
+    "regulation_type": "",
+    "sectors": [
+      "Distribution"
+    ],
+    "scope": "EU Insurance and Pensions Authority - Solvency II, insurance guidelines, and pensions regulation",
+    "priority_tier": 4,
+    "priority_label": "Informational",
+    "is_alert": false
+  },
+  {
+    "title": "Think Privacy : une exposition qui interroge la protection de la vie privée à l’ère numérique",
+    "source": "CNPD",
+    "date": "2026-08-21",
+    "link": "https://cnpd.public.lu/fr/actualites/national/2026/08/exposition-think-privacy.html",
+    "frameworks": [
+      "GDPR"
+    ],
+    "regulation_type": "",
+    "sectors": [],
+    "scope": "Luxembourg Data Protection Authority - GDPR enforcement, data protection guidance, and privacy regulations",
+    "priority_tier": 4,
+    "priority_label": "Informational",
+    "is_alert": false
   }
 ]

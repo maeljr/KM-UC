@@ -172,3 +172,64 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* ========== PAGE GÉNÉRATION (.p45) ========== */
+
+.p45 {
+  --p45-fond: #f4f5f7;
+  --p45-surface: #ffffff;
+  --p45-surface-2: #fafbfc;
+  --p45-texte: #16232e;
+  --p45-texte-2: #4a5a68;
+  --p45-texte-3: #7c8b98;
+  --p45-filet: #dfe3e8;
+  --p45-filet-fort: #c6ced6;
+  --p45-barre: #12293d;
+  --p45-accent: #e2003a;
+  --p45-accent-doux: #fdecf0;
+  --p45-attention-texte: #8e5606;
+  --p45-attention-fond: #fcf4e6;
+  --p45-attention-filet: #ead5ac;
+  --p45-ok-texte: #12613f;
+  --p45-ok-fond: #ebf6f0;
+  --p45-ok-filet: #bedfcd;
+  --p45-sur-barre: #ffffff;
+  --p45-sur-accent: #ffffff;
+  --p45-police: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --p45-mono: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--p45-police);
+  background: var(--p45-fond);
+  color: var(--p45-texte);
+  min-height: 100vh;
+}
+
+.p45 .num {
+  font-family: var(--p45-mono);
+}
+
+.p45 .p45-label {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--p45-texte);
+}
+
+.p45 .p45-corps {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 22px;
+  align-items: start;
+}
+
+.p45 .p45-aside {
+  position: sticky;
+  top: 22px;
+}
+
+@media (max-width: 900px) {
+  .p45 .p45-corps {
+    grid-template-columns: 1fr;
+  }
+  .p45 .p45-aside {
+    position: static;
+  }
+}
