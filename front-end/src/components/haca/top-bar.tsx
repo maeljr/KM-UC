@@ -20,9 +20,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function HacaLogo() {
+function HacaLogo({ onClick }: { onClick?: () => void }) {
   return (
-    <Link to="/" className="flex items-center gap-2.5 select-none">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2.5 select-none cursor-pointer"
+    >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground shadow-fluent-sm">
         <span className="text-sm font-bold tracking-tight">H</span>
       </span>
@@ -34,7 +37,7 @@ function HacaLogo() {
           Projet 45 · Knowledge Assistant
         </span>
       </span>
-    </Link>
+    </button>
   );
 }
 
@@ -95,13 +98,13 @@ const severityConfig: Record<
   },
 };
 
-export function TopBar() {
+export function TopBar({ onLogoClick }: { onLogoClick?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6">
-        <HacaLogo />
+        <HacaLogo onClick={onLogoClick} />
 
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {

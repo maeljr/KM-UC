@@ -6,6 +6,7 @@ import {
   ArrowRight,
   ChevronDown,
   Download,
+  Copy,
   Eye,
   ExternalLink,
   FileText,
@@ -303,6 +304,7 @@ function KnowledgeAssistant() {
   const [attachment, setAttachment] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const conversationsRef = useRef<HTMLDivElement | null>(null);
   const [deliverableOpen, setDeliverableOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedText, setGeneratedText] = useState("");
@@ -310,18 +312,128 @@ function KnowledgeAssistant() {
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [followUp, setFollowUp] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
+
   const [detailMode, setDetailMode] = useState(false);
 
   type ChatMessage = {
     role: "user" | "assistant";
     content: string;
     sources?: SourceItem[];
+    editedFrom?: string;
   };
 
+  type Conversation = {
+    id: string;
+    title: string;
+    theme: string;
+    messages: ChatMessage[];
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>("");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [ragResponse, setRagResponse] = useState<RagResponse | null>(null);
+  const [showConversations, setShowConversations] = useState(false);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingConversationTitle, setEditingConversationTitle] = useState("");
+  const [conversationTheme, setConversationTheme] = useState("");
 
-  const clearConversation = () => {
+  React.useEffect(() => {
+    try {
+      const savedConversations = localStorage.getItem("haca-conversations");
+      if (savedConversations) {
+        const convs: Conversation[] = JSON.parse(savedConversations);
+        setConversations(convs);
+        const activeId = localStorage.getItem("haca-active-conversation") || convs[0]?.id;
+        if (activeId) {
+          const active = convs.find((c) => c.id === activeId);
+          if (active) {
+            setActiveConversationId(active.id);
+            setChatHistory(active.messages);
+            const lastAssistant = [...active.messages].reverse().find((m) => m.role === "assistant");
+            if (lastAssistant?.sources) {
+              setRagResponse({
+                answer: lastAssistant.content,
+                sources: lastAssistant.sources,
+                confidence_score: 0,
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (conversationsRef.current && !conversationsRef.current.contains(event.target as Node)) {
+        setShowConversations(false);
+        setEditingConversationId(null);
+        setEditingConversationTitle("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const copyToClipboard = (text: string, key: string) => {
+    const fallbackCopy = () => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        setCopiedText(key);
+        setTimeout(() => setCopiedText(null), 2000);
+      } catch (e) {
+        console.error("Copie échouée:", e);
+      }
+      document.body.removeChild(textarea);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopiedText(key);
+        setTimeout(() => setCopiedText(null), 2000);
+      }).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  };
+
+  const newConversation = () => {
+    if (conversations.length >= 10) {
+      // Garder les 9 plus récentes
+      const recent = [...conversations]
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 9);
+      setConversations(recent);
+      localStorage.setItem("haca-conversations", JSON.stringify(recent));
+    }
+
+    const newConv: Conversation = {
+      id: `conv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title: `Conversation ${conversations.length + 1}`,
+      theme: conversationTheme.trim() || "Général",
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setConversations((prev) => [newConv, ...prev]);
+    setActiveConversationId(newConv.id);
     setChatHistory([]);
     setRagResponse(null);
     setGeneratedText("");
@@ -332,13 +444,200 @@ function KnowledgeAssistant() {
     setIsTyping(false);
     setTypingText("");
     setAttachment(null);
-    localStorage.removeItem("haca-last-response");
-    localStorage.removeItem("haca-last-query");
-    localStorage.removeItem("haca-chat-history");
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+    setEditingIndex(null);
+    setEditingText("");
+    localStorage.setItem("haca-conversations", JSON.stringify([newConv, ...conversations]));
+    localStorage.setItem("haca-active-conversation", newConv.id);
+  };
+
+  const selectConversation = (id: string) => {
+    const conv = conversations.find((c) => c.id === id);
+    if (!conv) return;
+
+    setActiveConversationId(id);
+    setChatHistory(conv.messages);
+
+    const lastAssistant = [...conv.messages].reverse().find((m) => m.role === "assistant");
+    if (lastAssistant?.sources) {
+      setRagResponse({
+        answer: lastAssistant.content,
+        sources: lastAssistant.sources,
+        confidence_score: 0,
+      });
+    } else {
+      setRagResponse(null);
     }
+
+    setGeneratedText(lastAssistant?.content || "");
+    setDeliverable(lastAssistant?.content || "");
+    setQuery("");
+    setFollowUp("");
+    setShowConversations(false);
+    localStorage.setItem("haca-active-conversation", id);
+  };
+
+  const deleteConversation = (id: string) => {
+    const updated = conversations.filter((c) => c.id !== id);
+    setConversations(updated);
+    localStorage.setItem("haca-conversations", JSON.stringify(updated));
+    if (activeConversationId === id) {
+      const next = updated[0];
+      if (next) {
+        setActiveConversationId(next.id);
+        setChatHistory(next.messages);
+        const lastAssistant = [...next.messages].reverse().find((m) => m.role === "assistant");
+        if (lastAssistant?.sources) {
+          setRagResponse({
+            answer: lastAssistant.content,
+            sources: lastAssistant.sources,
+            confidence_score: 0,
+          });
+        } else {
+          setRagResponse(null);
+        }
+        setGeneratedText(lastAssistant?.content || "");
+        setDeliverable(lastAssistant?.content || "");
+        setQuery("");
+        setFollowUp("");
+      } else {
+        setActiveConversationId("");
+        setChatHistory([]);
+        setRagResponse(null);
+      }
+    }
+  };
+
+  const renameConversation = (id: string, newTitle: string) => {
+    const updated = conversations.map((c) =>
+      c.id === id ? { ...c, title: newTitle.trim() || c.title, updatedAt: new Date().toISOString() } : c
+    );
+    setConversations(updated);
+    localStorage.setItem("haca-conversations", JSON.stringify(updated));
+    setEditingConversationId(null);
+    setEditingConversationTitle("");
+  };
+
+  const assignTheme = (id: string, theme: string) => {
+    const updated = conversations.map((c) =>
+      c.id === id ? { ...c, theme: theme.trim() || "Général", updatedAt: new Date().toISOString() } : c
+    );
+    setConversations(updated);
+    localStorage.setItem("haca-conversations", JSON.stringify(updated));
+  };
+
+  const updateConversationMessages = (messages: ChatMessage[]) => {
+    setConversations((prev) => {
+      const updated = prev.map((conv) =>
+        conv.id === activeConversationId
+          ? { ...conv, messages, updatedAt: new Date().toISOString() }
+          : conv
+      );
+      localStorage.setItem("haca-conversations", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const editUserMessage = async (index: number, newContent: string) => {
+    if (!newContent.trim() || isSearching) return;
+
+    const editedText = newContent.trim();
+
+    // Supprimer les messages à partir du message édité
+    const updatedHistory = chatHistory.slice(0, index);
+    const oldContent = chatHistory[index]?.content;
+
+    if (oldContent === editedText) return;
+
+    updatedHistory[index] = {
+      ...chatHistory[index],
+      content: editedText,
+      editedFrom: oldContent,
+    };
+
+    setChatHistory(updatedHistory);
+
+    // Si le message est court ou social (merci, ok, etc.), ne pas interroger le RAG
+    const socialMessages = ["merci", "ok", "okay", "parfait", "bonjour", "salut", "bonsoir", "super", "top", "merci beaucoup"];
+    const normalizedText = editedText.toLowerCase().trim();
+    const isSocial = socialMessages.some((m) => normalizedText === m || normalizedText.startsWith(m));
+
+    if (isSocial) {
+      setChatHistory((prev) => {
+        const next = [
+          ...prev,
+          {
+            role: "assistant" as const,
+            content: "Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.",
+            sources: [],
+          },
+        ];
+        updateConversationMessages(next);
+        return next;
+      });
+      setRagResponse({
+        answer: "Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.",
+        sources: [],
+        confidence_score: 0,
+      });
+      setGeneratedText("Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.");
+      setDeliverable("Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.");
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const response = await fetch("/api/ask-azure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: editedText,
+          lang,
+          detail: detailMode ? "detailed" : "concise",
+          history: updatedHistory.filter((m) => m.role === "user").slice(0, -1).map((m) => ({
+            role: "user" as const,
+            content: m.content,
+          })),
+        }),
+      });
+      const data: RagResponse = await response.json();
+
+      setIsTyping(true);
+      setChatHistory((prev) => {
+        const next = [
+          ...prev,
+          { role: "assistant" as const, content: data.answer, sources: data.sources },
+        ];
+        localStorage.setItem("haca-chat-history", JSON.stringify(next));
+        return next;
+      });
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
+
+      setRagResponse(data);
+      setGeneratedText(data.answer);
+      setDeliverable(data.answer);
+      addAuditLog({
+        user: currentUser,
+        action: "search",
+        detail: `Message édité: "${oldContent}" → "${editedText}"`,
+        tag: "Edit",
+      });
+    } catch (error) {
+      console.error("Erreur édition:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const submitEdit = (index: number) => {
+    if (editingText.trim() && editingText !== chatHistory[index]?.content) {
+      editUserMessage(index, editingText);
+    }
+    setEditingIndex(null);
+    setEditingText("");
   };
 
   // Restaurer la dernière réponse au chargement
@@ -429,6 +728,26 @@ function KnowledgeAssistant() {
     
     // Rendu optimiste : ajouter le message utilisateur immédiatement
     const userQuery = query.trim();
+
+    // Créer automatiquement une conversation si aucune n'est active
+    if (!activeConversationId) {
+      const newConv: Conversation = {
+        id: `conv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        title: userQuery.slice(0, 60),
+        theme: "Général",
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setConversations((prev) => {
+        const updated = [newConv, ...prev];
+        localStorage.setItem("haca-conversations", JSON.stringify(updated));
+        return updated;
+      });
+      setActiveConversationId(newConv.id);
+      localStorage.setItem("haca-active-conversation", newConv.id);
+    }
+
     setChatHistory(prev => [...prev, { role: "user" as const, content: userQuery }]);
     setQuery(""); // Vider le champ immédiatement
     setIsSearching(true);
@@ -446,7 +765,7 @@ function KnowledgeAssistant() {
           ...prev,
           { role: "assistant" as const, content: data.answer, sources: data.sources },
         ];
-        localStorage.setItem("haca-chat-history", JSON.stringify(updated));
+        updateConversationMessages(updated);
         return updated;
       });
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -478,6 +797,36 @@ function KnowledgeAssistant() {
     const userFollowUp = followUp.trim();
     setChatHistory(prev => [...prev, { role: "user" as const, content: userFollowUp }]);
     setFollowUp(""); // Vider le champ immédiatement
+
+    // Si le message est court ou social (merci, ok, etc.), ne pas interroger le RAG
+    const socialMessages = ["merci", "ok", "okay", "parfait", "bonjour", "salut", "bonsoir", "super", "top", "merci beaucoup"];
+    const normalizedText = userFollowUp.toLowerCase().trim();
+    const isSocial = socialMessages.some((m) => normalizedText === m || normalizedText.startsWith(m));
+
+    if (isSocial) {
+      setChatHistory((prev) => {
+        const next = [
+          ...prev,
+          {
+            role: "assistant" as const,
+            content: "Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.",
+            sources: [],
+          },
+        ];
+        updateConversationMessages(next);
+        return next;
+      });
+      setRagResponse({
+        answer: "Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.",
+        sources: [],
+        confidence_score: 0,
+      });
+      setGeneratedText("Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.");
+      setDeliverable("Avec plaisir ! Si vous avez une autre question réglementaire, je suis là.");
+      setIsSearching(false);
+      return;
+    }
+
     setIsSearching(true);
     
     try {
@@ -500,7 +849,7 @@ function KnowledgeAssistant() {
           ...prev,
           { role: "assistant" as const, content: data.answer, sources: data.sources },
         ];
-        localStorage.setItem("haca-chat-history", JSON.stringify(updated));
+        updateConversationMessages(updated);
         return updated;
       });
       setTimeout(() => setIsTyping(false), data.answer.length * 15 + 500);
@@ -557,7 +906,7 @@ function KnowledgeAssistant() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar />
+      <TopBar onLogoClick={() => setShowConversations((v) => !v)} />
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
         {/* Langue + Search */}
@@ -585,17 +934,114 @@ function KnowledgeAssistant() {
             {tr.subtitle}
           </p>
 
-          <div className="flex justify-between items-center mt-4">
+          <div className="relative flex justify-between items-center mt-4">
             <span className="text-xs text-muted-foreground">Conversation en cours</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearConversation}
-              className="text-xs gap-1.5"
-            >
-              <X className="h-3.5 w-3.5" />
-              Nouvelle conversation
-            </Button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowConversations((v) => !v)}
+                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+              >
+                Chats ({conversations.length})
+              </button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={newConversation}
+                className="text-xs gap-1.5"
+              >
+                <X className="h-3.5 w-3.5" />
+                Nouvelle conversation
+              </Button>
+            </div>
+
+            {showConversations && (
+  <div
+    ref={conversationsRef}
+    className="fixed left-0 top-0 z-50 flex h-full w-80 flex-col border-r border-border bg-card shadow-fluent-lg"
+  >
+    <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <h2 className="text-sm font-semibold text-foreground">Conversations</h2>
+      <button
+        onClick={() => {
+          setShowConversations(false);
+          setEditingConversationId(null);
+          setEditingConversationTitle("");
+        }}
+        className="rounded-full p-1 text-muted-foreground hover:bg-secondary"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+
+    <div className="flex-1 overflow-y-auto p-3">
+      {conversations.length === 0 ? (
+        <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+          Aucune conversation pour le moment.
+        </p>
+      ) : (
+        conversations.map((conv) => (
+          <div
+            key={conv.id}
+            className={`group mb-1.5 rounded-lg border px-3 py-2.5 transition-colors ${
+              conv.id === activeConversationId
+                ? "border-primary bg-accent"
+                : "border-border bg-card hover:bg-secondary"
+            }`}
+          >
+            {editingConversationId === conv.id ? (
+              <div className="flex gap-1">
+                <Input
+                  value={editingConversationTitle}
+                  onChange={(e) => setEditingConversationTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") renameConversation(conv.id, editingConversationTitle);
+                    if (e.key === "Escape") setEditingConversationId(null);
+                  }}
+                  autoFocus
+                  className="h-7 text-sm"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => selectConversation(conv.id)}
+                onDoubleClick={() => {
+                  setEditingConversationId(conv.id);
+                  setEditingConversationTitle(conv.title);
+                }}
+                className="w-full text-left"
+              >
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {conv.title}
+                </span>
+                <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                  {conv.theme} · {new Date(conv.updatedAt).toLocaleDateString("fr-FR")}
+                </span>
+              </button>
+            )}
+
+            <div className="mt-1.5 flex items-center justify-between opacity-0 group-hover:opacity-100">
+              <button
+                onClick={() => {
+                  setEditingConversationId(conv.id);
+                  setEditingConversationTitle(conv.title);
+                }}
+                className="text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Renommer
+              </button>
+              <button
+                onClick={() => deleteConversation(conv.id)}
+                className="text-[10px] text-destructive hover:underline"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+)}
           </div>
 
           <div className="mt-2 flex items-center gap-2 rounded-xl border border-input bg-card p-2 shadow-fluent transition-shadow focus-within:border-primary focus-within:shadow-fluent-lg">
@@ -697,11 +1143,97 @@ function KnowledgeAssistant() {
                           : "bg-secondary text-foreground"
                       )}>
                         {msg.role === "user" ? (
-                          <p className="font-medium">{msg.content}</p>
+                          <div className="group relative">
+                            {copiedText === `user-${idx}` && (
+                              <span className="absolute -top-8 left-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-primary shadow-sm">
+                                Copié !
+                              </span>
+                            )}
+                            {editingIndex === idx ? (
+                              <div className="flex flex-col gap-2">
+                                <textarea
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      submitEdit(idx);
+                                    }
+                                    if (e.key === "Escape") {
+                                      setEditingIndex(null);
+                                      setEditingText("");
+                                    }
+                                  }}
+                                  autoFocus
+                                  rows={2}
+                                  className="w-full resize-none rounded-lg border border-primary bg-primary-foreground px-3 py-2 text-sm text-primary"
+                                />
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingIndex(null);
+                                      setEditingText("");
+                                    }}
+                                    className="rounded-full px-3 py-1 text-xs text-muted-foreground hover:bg-white/20"
+                                  >
+                                    Annuler
+                                  </button>
+                                  <button
+                                    onClick={() => submitEdit(idx)}
+                                    className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary"
+                                  >
+                                    Valider
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="font-medium">{msg.content}</p>
+                                {msg.editedFrom && (
+                                  <p className="mt-1 text-[10px] opacity-70">
+                                    Édité — version précédente : "{msg.editedFrom.slice(0, 60)}…"
+                                  </p>
+                                )}
+                              </>
+                            )}
+                            <button
+                              onClick={() => {
+                                setEditingIndex(idx);
+                                setEditingText(msg.content);
+                              }}
+                              className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-white text-muted-foreground shadow-sm group-hover:flex"
+                              title="Éditer le message"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => copyToClipboard(msg.content, `user-${idx}`)}
+                              className="absolute -right-8 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-white text-muted-foreground shadow-sm group-hover:flex"
+                              title="Copier la question"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
                         ) : isTyping && idx === chatHistory.length - 1 ? (
                           <TypewriterText text={msg.content} />
                         ) : (
-                          <FormattedAnswer text={msg.content} />
+                          <div className="group relative">
+                            {copiedText === `assistant-${idx}` && (
+                              <span className="absolute -top-8 left-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-primary shadow-sm">
+                                Copié !
+                              </span>
+                            )}
+                            <FormattedAnswer text={msg.content} />
+                            <button
+                              onClick={() => copyToClipboard(msg.content, `assistant-${idx}`)}
+                              className="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full bg-white text-muted-foreground shadow-sm group-hover:flex"
+                              title="Copier la réponse"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -777,7 +1309,7 @@ function KnowledgeAssistant() {
               <div className="lg:col-span-4 space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
-                    <FileText className="h-4 w-4 text-success" />
+                    <FileText className="h-4 w-4 text-primary" />
                     <span>{tr.verifiedSources}</span>
                   </div>
                   <Badge variant="secondary" className="text-[11px] font-semibold">
@@ -801,21 +1333,17 @@ function KnowledgeAssistant() {
                         <Card key={index} className="border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-all">
                           <div className="p-4 space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs font-semibold uppercase">
-                                {src.source.replace('.pdf', '')}
-                              </Badge>
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs font-semibold uppercase">
+  {src.source.replace('.pdf', '')}
+			      </Badge>
                               <a href="#" className="text-slate-400 hover:text-slate-600 transition-colors">
                                 <ExternalLink className="h-3.5 w-3.5" />
                               </a>
                             </div>
 
-                            <h4 className="text-xs font-bold text-slate-900 truncate" title={src.source}>
-                              {src.source}
-                            </h4>
-
                             <div className="flex items-center gap-1.5 text-xs text-slate-500">
                               <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                              <span>{section} · Chunk {src.chunk_index}</span>
+                              <span>Chunk {src.chunk_index}</span>
                             </div>
 
                             <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded border border-slate-100 leading-relaxed">
