@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useUser } from "@/hooks/useUser";
+import { recordQuestion, getSuggestions } from "@/lib/suggestions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { addAuditLog } from "@/lib/audit-log";
 import {
@@ -316,6 +317,8 @@ function KnowledgeAssistant() {
   const [editingText, setEditingText] = useState("");
 
   const [detailMode, setDetailMode] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(-1);
 
   type ChatMessage = {
     role: "user" | "assistant";
@@ -346,7 +349,10 @@ function KnowledgeAssistant() {
     try {
       const savedConversations = localStorage.getItem("haca-conversations");
       if (savedConversations) {
-        const convs: Conversation[] = JSON.parse(savedConversations);
+        const convs: Conversation[] = JSON.parse(savedConversations).map((c: Conversation) => ({
+          ...c,
+          theme: c.theme || "Général",
+        }));
         setConversations(convs);
         const activeId = localStorage.getItem("haca-active-conversation") || convs[0]?.id;
         if (activeId) {
@@ -515,6 +521,16 @@ function KnowledgeAssistant() {
     localStorage.setItem("haca-conversations", JSON.stringify(updated));
     setEditingConversationId(null);
     setEditingConversationTitle("");
+  };
+
+  const updateConversationTheme = (id: string, theme: string) => {
+    const updated = conversations.map((c) =>
+      c.id === id
+        ? { ...c, theme: theme.trim() || "Général", updatedAt: new Date().toISOString() }
+        : c
+    );
+    setConversations(updated);
+    localStorage.setItem("haca-conversations", JSON.stringify(updated));
   };
 
   const assignTheme = (id: string, theme: string) => {
@@ -728,6 +744,7 @@ function KnowledgeAssistant() {
     
     // Rendu optimiste : ajouter le message utilisateur immédiatement
     const userQuery = query.trim();
+    recordQuestion(userQuery);
 
     // Créer automatiquement une conversation si aucune n'est active
     if (!activeConversationId) {
@@ -1014,12 +1031,12 @@ function KnowledgeAssistant() {
                   {conv.title}
                 </span>
                 <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                  {conv.theme} · {new Date(conv.updatedAt).toLocaleDateString("fr-FR")}
+                  {conv.theme || "Général"} · {new Date(conv.updatedAt).toLocaleDateString("fr-FR")}
                 </span>
               </button>
             )}
 
-            <div className="mt-1.5 flex items-center justify-between opacity-0 group-hover:opacity-100">
+            <div className="mt-1.5 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100">
               <button
                 onClick={() => {
                   setEditingConversationId(conv.id);
@@ -1029,6 +1046,18 @@ function KnowledgeAssistant() {
               >
                 Renommer
               </button>
+              <select
+                value={conv.theme || "Général"}
+                onChange={(e) => updateConversationTheme(conv.id, e.target.value)}
+                className="rounded border border-border bg-card px-1 py-0.5 text-[10px] text-muted-foreground"
+              >
+                <option>Général</option>
+                <option>LCB-FT</option>
+                <option>DORA</option>
+                <option>ESG</option>
+                <option>Gouvernance</option>
+                <option>Fonds</option>
+              </select>
               <button
                 onClick={() => deleteConversation(conv.id)}
                 className="text-[10px] text-destructive hover:underline"
@@ -1048,8 +1077,31 @@ function KnowledgeAssistant() {
             <Search className="ml-2 h-5 w-5 shrink-0 text-muted-foreground" />
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSuggestions(getSuggestions(e.target.value).map((s) => s.text));
+                setSelectedSuggestion(-1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setSelectedSuggestion((prev) =>
+                    prev < suggestions.length - 1 ? prev + 1 : prev
+                  );
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setSelectedSuggestion((prev) => (prev > 0 ? prev - 1 : prev));
+                } else if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (selectedSuggestion >= 0 && suggestions[selectedSuggestion]) {
+                    setQuery(suggestions[selectedSuggestion]);
+                    setSuggestions([]);
+                    setSelectedSuggestion(-1);
+                  } else {
+                    handleSearch();
+                  }
+                }
+              }}
               placeholder={tr.searchPlaceholder}
               className="min-w-0 flex-1 bg-transparent px-1 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
@@ -1058,6 +1110,29 @@ function KnowledgeAssistant() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+
+          {suggestions.length > 0 && (
+            <div className="mx-auto mt-2 w-full max-w-2xl rounded-xl border border-border bg-card p-1.5 shadow-fluent-sm text-left">
+              {suggestions.map((sug, idx) => (
+                <button
+                  key={sug}
+                  onClick={() => {
+                    setQuery(sug);
+                    setSuggestions([]);
+                    setSelectedSuggestion(-1);
+                  }}
+                  onMouseEnter={() => setSelectedSuggestion(idx)}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm ${
+                    selectedSuggestion === idx
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             {quickTags.map((tag) => (
