@@ -334,6 +334,7 @@ function KnowledgeAssistant() {
     messages: ChatMessage[];
     createdAt: string;
     updatedAt: string;
+    archived?: boolean;
   };
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -511,6 +512,14 @@ function KnowledgeAssistant() {
         setRagResponse(null);
       }
     }
+  };
+
+  const unarchiveConversation = (id: string) => {
+    const updated = conversations.map((c) =>
+      c.id === id ? { ...c, archived: false, updatedAt: new Date().toISOString() } : c
+    );
+    setConversations(updated);
+    localStorage.setItem("haca-conversations", JSON.stringify(updated));
   };
 
   const renameConversation = (id: string, newTitle: string) => {

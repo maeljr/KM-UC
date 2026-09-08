@@ -98,6 +98,7 @@ function Repository() {
     }
   };
 
+  const libraries = Array.from(new Set(documents.map((d) => d.library))).sort();
   const filtered = documents.filter((d) =>
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.businessLine.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,14 +145,14 @@ function Repository() {
           </div>
         ) : (
           <div className="mt-6 space-y-10">
-            {themes.map((theme) => (
-              <section key={theme}>
+            {libraries.map((lib) => (
+              <section key={lib}>
                 <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  {theme}
+                  {lib}
                 </h2>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filtered
-                    .filter((d) => d.theme === theme)
+                    .filter((d) => d.library === lib)
                     .map((doc) => (
                       <Card key={doc.parentId} className="flex flex-col p-5 shadow-fluent-sm transition-shadow hover:shadow-fluent">
                         <div className="flex items-start justify-between gap-2">

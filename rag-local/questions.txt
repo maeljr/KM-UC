@@ -1,0 +1,122 @@
+climate change monetary policy
+climate change monetary policy
+ECB climate
+What are the ECB's supervisory priorities?
+ECB banking supervision
+ECB guide to internal models
+What are the FATF Recommendations?
+FATF Recommendations
+FATF AML/CFT
+FATF high-risk jurisdictions
+FATF virtual assets
+What are the transparency rules for non-equity instruments?
+What are the liquidity management tools under AIFMD?
+What are the CSDR settlement discipline rules?
+ESMA MiFID II
+What are the UCITS sustainability requirements?
+What are the revised SREP guidelines?
+What are the EBA guidelines on ESG risk management?
+EBA operational risk
+EBA outsourcing guidelines
+EBA Pillar 3 disclosures
+What is the ORSA under Solvency II?
+What are the Solvency II capital requirements?
+EIOPA Solvency II
+EIOPA ORSA
+Solvency II guidelines
+What are the AMLA's 2026 priorities?
+What are the draft RTS on Customer Due Diligence?
+AMLA RTS
+AMLA Single Programming Document
+AMLA cross-border FIU cooperation
+Do we have an example of a Compliance Monitoring Plan, including the associated risk assessment, for a crypto-asset service provider (CASP) in Luxembourg?
+In the context of a Long Form Report (external audit) of a payment institution, do we have a model approach for the review of the AML/CFT framework?
+Do we have examples of valuation policy and risk management policy for an ISA with infrastructure funds?
+Do we have a due diligence questionnaire to send to UCITS fund distributors?
+What are the regulatory obligations of an MFI for FATCA/CRS reporting, and do we have an example of an internal FATCA/CRS policy?
+What are the supervisory obligations of an MFI when functions are delegated directly by the fund's general partner rather than by the MFI itself?
+Investor blocked account monitoring system (the function of transfer agent/TA is outsourced). Apart from sending reminders to the TA to obtain the missing documentation to complete/finalize the KYC, what more can IFM do? Make a declaration of suspicion, escalate the subject to the Board?
+What obligations are imposed on an AIFM investing in illiquid securities under the Market Abuse Regulation (MAD 2)?
+Do we have performance assessment frameworks that incorporate sustainability objectives (ESG) for a credit institution?
+Quelles sont les travaux que le réviseur d'entreprises doit effectuer dans le cas d'une erreur de calcul de NAV selon la circulaire CSSF 24/856 (par type d'erreur) ?
+Quelles sont les travaux que le réviseur d'entreprises doit effectuer dans le cas d'une fusion / transformation / apport en nature selon la norme XXXX (j'ai plus en tête toutes le normes) ?
+Quels sont les changements de principes comptables dans les états financiers en cas de liquidation ?
+Quels sont les impacts de la nouvelle norme IFRS 18 ?
+What are the ICT governance requirements for Luxembourg-supervised entities?
+What are the draft RTS on Customer Due Diligence?
+What are the ECB's supervisory priorities?
+What are the draft RTS on Customer Due Diligence?
+What are the key provisions of Delegated Regulation (EU) 2017/565?
+What are the ESMA guidelines on suitability?
+What is ESMA's supervisory briefing on outsourcing?
+What are the current consultation proposals for the AIFMD review?
+What are the requirements for a merger under the Luxembourg law on securitisation?
+What is the topic of the latest discussion paper on sustainability?
+How does ESMA's Q&A on MiFID II treat best execution?
+what is the procedure of submitting a parliamentary question
+what are the customer due diligence requirements under the AMLR?
+what are the triggers for enhanced due diligence (EDD)?
+what is the difference between policy and a procedure under cssf rules?
+what would be the frequency of compliance monitoring reviews
+what are the record-keeping requirement of AML/CFT?
+what is the differnece between suspicion and confirmed violation
+what is the difference between suspicion and confirmed violation
+what are the requirements for staff AML/CFT training?
+what are the requirements for the compliance function's reporting lines?
+what are the requirements for outsourcing critical functions?
+what are the requirements for the internal audit function?
+what are the requirements for conflict for interest management?
+what are the requirements for client asset segregation
+what are the requirement for internal models for credit risk?
+what are the ECB'S supervisory priorities for 2026-28?
+what are the SREP requirement for a bank?
+what are the risk management requirements for a payment institution
+what are the AML/CFT requirements for a payment institution
+what are the AML/CFT requirements for the ROA/CSSF questionnaire?
+what are the requirements for a long form report (audit report)?
+what are the depositary oversight requirements?
+quelles sont les exigences de la circulaire cssf 26/906?
+what are the internal governance requirement for a financial institution?
+what are the ECB's supervisory priorities for 2026-28 and how do they affect banks?
+what are the SREP capital requirements for a bank?
+what are the requirements for internal models for credit risk?
+what are the ICAAP requirements for a bank?
+what are the liquidity management tools under AIFMD?
+what are the UCITS sustainability requirements?
+what are the CSDR settlement discipline rules?
+what are the difference between pillar 2 guidance and pillar 2 requirement?
+What is the legal basis for the free movement of capital in the EU?
+What are the key requirements of the PRIIPs Regulation?
+How is the MiFID II directive transposed into Luxembourg law?
+What is the amended law of 5 April 1993 on the financial sector?
+What is the Grand-Ducal regulation implementing MiFID II?
+What are the requirements under RTS 27 for non-equity transparency?
+What are the technical reporting formats under ITS?
+What are the key provisions of Delegated Regulation (EU) 2017/565?
+What is the deadline for the annual update of the DORA register under Circular CSSF 25/893?
+What are the ESMA guidelines on suitability?
+How does ESMA's Q&A on MiFID II treat best execution?
+What is ESMA's supervisory briefing on outsourcing?
+What is the topic of the latest discussion paper on sustainability?
+What are the requirements for a merger under the Luxembourg law on securitisation?
+What work must the statutory auditor carry out in the event of an error in the calculation of the NAV according to CSSF Circular 24/856?
+What work does the statutory auditor have to do in the case of a merger or transformation according to the professional standards?
+How should the fair value of a financial option be accounted for?
+How should financial statements be presented when the entity is not a going concern?
+What are the changes in accounting principles when a company is in liquidation?
+What are the stages of a company liquidation and what are the roles of the liquidator and auditor?
+What are the impacts of the new IFRS 18 standard on financial statements?
+What are the impacts of the new law on securitisation in Luxembourg?
+How can the platform verify the consistency of data in a client's board management report (e.g., Luxembourg GDP growth of 10%)?
+How can the platform verify the consistency of data in a client's board management report
+Provide a summary of the key points from a client's prospectus, focusing on the type of fund, service providers, fee structure, valuation method, investment policies, performance fees, and redemption mechanisms.
+What are the FATF's requirements for AML/CFT?
+What are the FATF's high-risk and monitored jurisdictions?
+What are the main regulatory priorities for 2026 across EU authorities?
+What are the climate risk management expectations for financial institutions?
+What are the ESG-related regulatory expectations from ECB, EBA, and ESMA?
+What are the AML/CFT obligations for financial institutions?
+What are the data protection obligations under GDPR for financial institutions?
+Quelles sont les obligations de la circulaire CSSF 24/856 ?
+What must be reported for an ICT-related incident under DORA?
+"What is ESMA's supervisory briefing on outsourcing?"
