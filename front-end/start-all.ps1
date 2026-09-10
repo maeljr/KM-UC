@@ -8,7 +8,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "`n[1/3] Démarrage du backend RAG (port 8000)..." -ForegroundColor Yellow
 Start-Process -FilePath "powershell" -ArgumentList @(
     "-NoExit",
-    "-Command", "cd 'C:\Dev\HACA\KM%20UC\rag-local'; python main.py"
+    "-Command", "cd 'C:\Dev\HACA\KM%20UC\rag-local'; .\.venv\Scripts\python.exe main.py"
 )
 
 # 2. Service de génération (port 8001)

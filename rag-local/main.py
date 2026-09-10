@@ -101,7 +101,7 @@ AZURE_API_VERSION = "2025-01-01-preview"
 AZURE_MODEL_GEN = "gpt-5.6-luna"
 AZURE_MODEL_VERIF = "gpt-5.4"
 USE_AZURE = True
-USE_AZURE_EMBEDDING = True
+USE_AZURE_EMBEDDING = False
 
 # --- CONFIGURATION AZURE AI SEARCH ---
 AZURE_SEARCH_ENDPOINT = "https://srch-haca-shared-dev.search.windows.net"

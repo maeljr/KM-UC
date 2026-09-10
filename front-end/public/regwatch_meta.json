@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-09-10T10:08:42",
+  "finished_at": "2026-09-10T10:18:43",
+  "duration_seconds": 600,
+  "days_window": 30,
+  "board_days": 7,
+  "counts": {
+    "published": 26,
+    "pending_review": 27,
+    "rejected": 246,
+    "archived": 51,
+    "collected": 350
+  },
+  "sources": {
+    "total": 50,
+    "active": 48,
+    "producing": 30,
+    "failing": 4
+  },
+  "tagged_by_llm": 190,
+  "tagged_by_keyword": 0
+}
